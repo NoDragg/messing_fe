@@ -185,6 +185,7 @@ const handleSendMessage = (content) => {
   if (!wasPublished) {
     chatStore.messages.push({
       id: Date.now(),
+      senderId: authStore.user?.id,
       senderUsername: currentUser.value?.username || currentUser.value?.email || 'Guest',
       content: content.trim(),
       createdAt: new Date().toISOString(),

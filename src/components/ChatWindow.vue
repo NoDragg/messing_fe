@@ -89,9 +89,21 @@ const getTextContent = (message) => {
   return message.content
 }
 
+const getMessageUsername = (message) => {
+  const currentUserId = authStore.user?.id
+  const msgSenderId = message.senderId || message.userId
+  
+  if (currentUserId && msgSenderId && currentUserId === msgSenderId) {
+    return authStore.user.username
+  }
+  return message.senderUsername || message.username || 'Unknown'
+}
+
 const getMessageAvatarUrl = (message) => {
-  const msgUsername = message.senderUsername || message.username
-  if (authStore.user && msgUsername === authStore.user.username && authStore.user.avatarUrl) {
+  const currentUserId = authStore.user?.id
+  const msgSenderId = message.senderId || message.userId
+
+  if (currentUserId && msgSenderId && currentUserId === msgSenderId && authStore.user.avatarUrl) {
     return authStore.user.avatarUrl
   }
   return message.senderAvatarUrl || message.avatarUrl || message.userAvatarUrl || null
@@ -119,12 +131,12 @@ const getMessageAvatarUrl = (message) => {
           class="chat-window__message-avatar-image"
         />
         <div v-else class="chat-window__message-avatar">
-          {{ (message.senderUsername || message.username || 'U').charAt(0).toUpperCase() }}
+          {{ getMessageUsername(message).charAt(0).toUpperCase() }}
         </div>
 
         <div>
           <div class="chat-window__message-meta">
-            <p class="chat-window__sender-name">{{ message.senderUsername || message.username || 'Unknown' }}</p>
+            <p class="chat-window__sender-name">{{ getMessageUsername(message) }}</p>
             <span class="chat-window__message-time">{{ formatTime(message.createdAt) }}</span>
           </div>
           <p v-if="getTextContent(message)" class="chat-window__message-content">{{ getTextContent(message) }}</p>
