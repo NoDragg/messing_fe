@@ -1,6 +1,9 @@
 <script setup>
 import { ImagePlus } from 'lucide-vue-next'
 import { nextTick, ref, watch } from 'vue'
+import { useAuthStore } from '@/stores/authStore'
+
+const authStore = useAuthStore()
 
 const props = defineProps({
   channelName: {
@@ -85,6 +88,14 @@ const getTextContent = (message) => {
   if (isImageMessage(message)) return ''
   return message.content
 }
+
+const getMessageAvatarUrl = (message) => {
+  const msgUsername = message.senderUsername || message.username
+  if (authStore.user && msgUsername === authStore.user.username && authStore.user.avatarUrl) {
+    return authStore.user.avatarUrl
+  }
+  return message.senderAvatarUrl || message.avatarUrl || message.userAvatarUrl || null
+}
 </script>
 
 <template>
@@ -101,7 +112,13 @@ const getTextContent = (message) => {
         :key="message.id"
         class="chat-window__message-item"
       >
-        <div class="chat-window__message-avatar">
+        <img
+          v-if="getMessageAvatarUrl(message)"
+          :src="getMessageAvatarUrl(message)"
+          alt="Avatar"
+          class="chat-window__message-avatar-image"
+        />
+        <div v-else class="chat-window__message-avatar">
           {{ (message.senderUsername || message.username || 'U').charAt(0).toUpperCase() }}
         </div>
 
@@ -226,6 +243,13 @@ const getTextContent = (message) => {
   color: #ffffff;
   font-size: 12px;
   font-weight: 600;
+}
+
+.chat-window__message-avatar-image {
+  height: 36px;
+  width: 36px;
+  border-radius: 9999px;
+  object-fit: cover;
 }
 
 .chat-window__message-meta {

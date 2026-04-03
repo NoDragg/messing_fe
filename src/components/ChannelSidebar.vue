@@ -131,7 +131,13 @@ const handleInviteUser = async () => {
 
     <footer class="channel-sidebar__footer">
       <div class="channel-sidebar__user-wrap">
-        <div class="channel-sidebar__avatar">
+        <img
+          v-if="currentUser?.avatarUrl"
+          :src="currentUser.avatarUrl"
+          alt="Avatar"
+          class="channel-sidebar__avatar-image"
+        />
+        <div v-else class="channel-sidebar__avatar">
           {{ (currentUser?.username || 'G').charAt(0).toUpperCase() }}
         </div>
         <div class="channel-sidebar__user-name-wrap">
@@ -316,6 +322,13 @@ const handleInviteUser = async () => {
   color: #ffffff;
   font-size: 12px;
   font-weight: 700;
+}
+
+.channel-sidebar__avatar-image {
+  height: 32px;
+  width: 32px;
+  border-radius: 9999px;
+  object-fit: cover;
 }
 
 .channel-sidebar__user-name-wrap {
