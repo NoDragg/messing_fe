@@ -1,5 +1,6 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
+import { Camera, Eye, EyeOff, LogOut, Save, Settings } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -159,7 +160,10 @@ const handleLogout = async () => {
   <main class="settings-view">
     <div class="settings-view__container">
       <header class="settings-view__header">
-        <h1 class="settings-view__title">Settings</h1>
+        <h1 class="settings-view__title">
+          <Settings :size="22" />
+          <span>Settings</span>
+        </h1>
         <p class="settings-view__subtitle">Quản lý hồ sơ và bảo mật tài khoản của bạn</p>
       </header>
 
@@ -176,7 +180,8 @@ const handleLogout = async () => {
           </div>
 
           <button type="button" class="settings-secondary-btn" @click="openAvatarPicker">
-            Chỉnh sửa
+            <Camera :size="14" />
+            <span>Chỉnh sửa</span>
           </button>
 
           <input
@@ -225,7 +230,8 @@ const handleLogout = async () => {
             placeholder="Nhập mật khẩu hiện tại"
           />
           <button type="button" class="settings-eye" @click="showCurrentPassword = !showCurrentPassword">
-            {{ showCurrentPassword ? 'Ẩn' : 'Hiện' }}
+            <EyeOff v-if="showCurrentPassword" :size="14" />
+            <Eye v-else :size="14" />
           </button>
         </div>
 
@@ -238,7 +244,8 @@ const handleLogout = async () => {
             placeholder="Ít nhất 8 ký tự"
           />
           <button type="button" class="settings-eye" @click="showNewPassword = !showNewPassword">
-            {{ showNewPassword ? 'Ẩn' : 'Hiện' }}
+            <EyeOff v-if="showNewPassword" :size="14" />
+            <Eye v-else :size="14" />
           </button>
         </div>
 
@@ -251,7 +258,8 @@ const handleLogout = async () => {
             placeholder="Nhập lại mật khẩu mới"
           />
           <button type="button" class="settings-eye" @click="showConfirmPassword = !showConfirmPassword">
-            {{ showConfirmPassword ? 'Ẩn' : 'Hiện' }}
+            <EyeOff v-if="showConfirmPassword" :size="14" />
+            <Eye v-else :size="14" />
           </button>
         </div>
       </section>
@@ -267,6 +275,7 @@ const handleLogout = async () => {
           @click="handleSaveChanges"
         >
           <span v-if="isSavingProfile || isSavingPassword" class="settings-spinner"></span>
+          <Save v-else :size="14" />
           <span>{{ isSavingProfile || isSavingPassword ? 'Đang lưu...' : 'Lưu thay đổi' }}</span>
         </button>
 
@@ -277,6 +286,7 @@ const handleLogout = async () => {
           @click="handleLogout"
         >
           <span v-if="isLoggingOut" class="settings-spinner"></span>
+          <LogOut v-else :size="14" />
           <span>{{ isLoggingOut ? 'Đang đăng xuất...' : 'Đăng xuất' }}</span>
         </button>
       </div>
@@ -291,7 +301,7 @@ const handleLogout = async () => {
 <style scoped>
 .settings-view {
   min-height: 100vh;
-  background: radial-gradient(circle at top, #1f2a44, #111827 42%);
+  background-color: #374151;
   color: #f3f4f6;
   padding: 24px;
   box-sizing: border-box;
@@ -318,9 +328,8 @@ const handleLogout = async () => {
 }
 
 .settings-card {
-  border: 1px solid #334155;
-  background-color: rgba(17, 24, 39, 0.78);
-  backdrop-filter: blur(6px);
+  border: 1px solid #4b5563;
+  background-color: #1f2937;
   border-radius: 14px;
   padding: 16px;
   margin-bottom: 14px;

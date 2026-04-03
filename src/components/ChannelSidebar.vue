@@ -1,4 +1,6 @@
 <script setup>
+import { LogOut, Settings, UserPlus } from 'lucide-vue-next'
+
 defineProps({
   serverName: {
     type: String,
@@ -18,7 +20,7 @@ defineProps({
   },
 })
 
-const emit = defineEmits(['select-channel', 'open-settings', 'invite-user'])
+const emit = defineEmits(['select-channel', 'open-settings', 'invite-user', 'logout'])
 </script>
 
 <template>
@@ -27,11 +29,11 @@ const emit = defineEmits(['select-channel', 'open-settings', 'invite-user'])
       <h2 class="channel-sidebar__server-name">{{ serverName }}</h2>
       <button
         type="button"
-        class="channel-sidebar__invite-button"
+        class="channel-sidebar__icon-button"
         title="Mời user vào server"
         @click="emit('invite-user')"
       >
-        Mời
+        <UserPlus :size="16" />
       </button>
     </header>
 
@@ -61,14 +63,25 @@ const emit = defineEmits(['select-channel', 'open-settings', 'invite-user'])
         </div>
       </div>
 
-      <button
-        type="button"
-        class="channel-sidebar__settings-button"
-        title="Cài đặt"
-        @click="emit('open-settings')"
-      >
-        Settings
-      </button>
+      <div class="channel-sidebar__actions">
+        <button
+          type="button"
+          class="channel-sidebar__icon-button"
+          title="Cài đặt"
+          @click="emit('open-settings')"
+        >
+          <Settings :size="16" />
+        </button>
+
+        <button
+          type="button"
+          class="channel-sidebar__icon-button channel-sidebar__icon-button--danger"
+          title="Đăng xuất"
+          @click="emit('logout')"
+        >
+          <LogOut :size="16" />
+        </button>
+      </div>
     </footer>
   </aside>
 </template>
@@ -101,20 +114,24 @@ const emit = defineEmits(['select-channel', 'open-settings', 'invite-user'])
   color: #ffffff;
 }
 
-.channel-sidebar__invite-button {
+.channel-sidebar__icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: none;
-  border-radius: 4px;
-  background-color: #4f46e5;
-  padding: 4px 8px;
-  color: #ffffff;
-  font-size: 12px;
-  font-weight: 500;
+  background: transparent;
+  padding: 4px;
+  color: #cbd5e1;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: color 0.2s ease;
 }
 
-.channel-sidebar__invite-button:hover {
-  background-color: #6366f1;
+.channel-sidebar__icon-button:hover {
+  color: #ffffff;
+}
+
+.channel-sidebar__icon-button--danger:hover {
+  color: #f87171;
 }
 
 .channel-sidebar__channel-list {
@@ -203,18 +220,9 @@ const emit = defineEmits(['select-channel', 'open-settings', 'invite-user'])
   color: #ffffff;
 }
 
-.channel-sidebar__settings-button {
-  border: none;
-  border-radius: 4px;
-  background-color: #0ea5e9;
-  padding: 4px 8px;
-  color: #ffffff;
-  font-size: 12px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.channel-sidebar__settings-button:hover {
-  background-color: #0284c7;
+.channel-sidebar__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 </style>

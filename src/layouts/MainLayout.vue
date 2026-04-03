@@ -131,6 +131,13 @@ const handleSendImage = async (file) => {
   }
 }
 
+const handleLogout = async () => {
+  chatStore.reset()
+  serverStore.reset()
+  authStore.logout()
+  await router.push({ name: 'login' })
+}
+
 onMounted(async () => {
   if (authStore.token) {
     chatStore.connectWebSocket(authStore.token)
@@ -176,6 +183,7 @@ watch(
       @select-channel="handleSelectChannel"
       @invite-user="handleInviteUser"
       @open-settings="router.push({ name: 'settings' })"
+      @logout="handleLogout"
     />
 
     <ChatWindow

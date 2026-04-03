@@ -1,4 +1,5 @@
 <script setup>
+import { ImagePlus } from 'lucide-vue-next'
 import { nextTick, ref, watch } from 'vue'
 
 const props = defineProps({
@@ -107,11 +108,11 @@ const getImageUrl = (message) => {
       <form class="chat-window__composer-form" @submit.prevent="handleSubmit">
         <button
           type="button"
-          class="chat-window__image-button"
+          class="chat-window__icon-button"
           title="Gửi ảnh"
           @click="triggerSelectImage"
         >
-          Image
+          <ImagePlus :size="18" />
         </button>
 
         <input
@@ -255,20 +256,20 @@ const getImageUrl = (message) => {
   gap: 8px;
 }
 
-.chat-window__image-button {
+.chat-window__icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: none;
-  border-radius: 8px;
-  background-color: #4f46e5;
-  color: #ffffff;
-  padding: 8px 12px;
-  font-size: 12px;
-  font-weight: 600;
+  background: transparent;
+  padding: 4px;
+  color: #cbd5e1;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: color 0.2s ease;
 }
 
-.chat-window__image-button:hover {
-  background-color: #6366f1;
+.chat-window__icon-button:hover {
+  color: #ffffff;
 }
 
 .chat-window__file-input {
