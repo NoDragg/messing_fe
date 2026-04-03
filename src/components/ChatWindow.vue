@@ -16,9 +16,10 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['send-message', 'logout'])
+const emit = defineEmits(['send-message', 'send-image', 'logout'])
 
 const newMessage = ref('')
+const fileInputRef = ref(null)
 const messageListRef = ref(null)
 
 const formatTime = (time) => {
@@ -45,6 +46,22 @@ const handleSubmit = () => {
   if (!newMessage.value.trim()) return
   emit('send-message', newMessage.value)
   newMessage.value = ''
+}
+
+const triggerSelectImage = () => {
+  fileInputRef.value?.click()
+}
+
+const handleFileSelected = (event) => {
+  const file = event.target.files?.[0]
+  if (!file) return
+
+  emit('send-image', file)
+  event.target.value = ''
+}
+
+const getImageUrl = (message) => {
+  return message?.imageUrl || message?.url || message?.image || null
 }
 </script>
 
@@ -78,7 +95,13 @@ const handleSubmit = () => {
             <p class="chat-window__sender-name">{{ message.senderUsername || message.username || 'Unknown' }}</p>
             <span class="chat-window__message-time">{{ formatTime(message.createdAt) }}</span>
           </div>
-          <p class="chat-window__message-content">{{ message.content }}</p>
+          <p v-if="message.content" class="chat-window__message-content">{{ message.content }}</p>
+          <img
+            v-if="getImageUrl(message)"
+            :src="getImageUrl(message)"
+            alt="chat image"
+            class="chat-window__message-image"
+          />
         </div>
       </article>
 
@@ -88,7 +111,24 @@ const handleSubmit = () => {
     </div>
 
     <div class="chat-window__composer-wrap">
-      <form @submit.prevent="handleSubmit">
+      <form class="chat-window__composer-form" @submit.prevent="handleSubmit">
+        <button
+          type="button"
+          class="chat-window__image-button"
+          title="Gửi ảnh"
+          @click="triggerSelectImage"
+        >
+          Image
+        </button>
+
+        <input
+          ref="fileInputRef"
+          type="file"
+          accept="image/*"
+          class="chat-window__file-input"
+          @change="handleFileSelected"
+        />
+
         <input
           v-model="newMessage"
           type="text"
@@ -180,6 +220,7 @@ const handleSubmit = () => {
 }
 
 .chat-window__sender-name {
+  margin: 0;
   font-size: 14px;
   font-weight: 600;
   color: #ffffff;
@@ -191,6 +232,7 @@ const handleSubmit = () => {
 }
 
 .chat-window__message-content {
+  margin: 2px 0 0;
   font-size: 14px;
   color: #f3f4f6;
 }
@@ -200,9 +242,44 @@ const handleSubmit = () => {
   color: #d1d5db;
 }
 
+.chat-window__message-image {
+  margin-top: 6px;
+  max-width: 320px;
+  max-height: 320px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid #4b5563;
+}
+
 .chat-window__composer-wrap {
   border-top: 1px solid #4b5563;
   padding: 16px;
+}
+
+.chat-window__composer-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-window__image-button {
+  border: none;
+  border-radius: 8px;
+  background-color: #4f46e5;
+  color: #ffffff;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.chat-window__image-button:hover {
+  background-color: #6366f1;
+}
+
+.chat-window__file-input {
+  display: none;
 }
 
 .chat-window__composer-input {

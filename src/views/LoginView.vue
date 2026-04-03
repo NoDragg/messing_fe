@@ -7,13 +7,13 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const form = reactive({
-  email: '',
+  identifier: '',
   password: '',
 })
 
 const handleLogin = async () => {
   try {
-    await authStore.login(form.email, form.password)
+    await authStore.login(form.identifier, form.password)
 
     const redirectPath = typeof router.currentRoute.value.query.redirect === 'string'
       ? router.currentRoute.value.query.redirect
@@ -48,14 +48,14 @@ onUnmounted(() => {
       <form class="login-view__form" @submit.prevent="handleLogin">
         <div>
           <label class="login-view__label">
-            Email <span class="login-view__required">*</span>
+            Email hoặc tên đăng nhập <span class="login-view__required">*</span>
           </label>
           <input
-            v-model="form.email"
-            type="email"
+            v-model="form.identifier"
+            type="text"
             required
             class="login-view__input"
-            placeholder="you@example.com"
+            placeholder="you@example.com hoặc your_username"
           />
         </div>
 

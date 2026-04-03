@@ -111,6 +111,26 @@ const handleSendMessage = (content) => {
   }
 }
 
+const handleSendImage = async (file) => {
+  if (!chatStore.currentChannelId || !file) return
+
+  try {
+    const result = await chatStore.sendImage(chatStore.currentChannelId, file)
+
+    if (result) {
+      chatStore.messages.push({
+        id: result.id || Date.now(),
+        senderUsername: result.senderUsername || currentUser.value?.username || currentUser.value?.email || 'Guest',
+        imageUrl: result.imageUrl || result.url || result.content,
+        content: result.content || '',
+        createdAt: result.createdAt || new Date().toISOString(),
+      })
+    }
+  } catch (error) {
+    window.alert(error.response?.data?.message || 'Gửi ảnh thất bại')
+  }
+}
+
 const handleLogout = async () => {
   chatStore.reset()
   serverStore.reset()
@@ -170,6 +190,7 @@ watch(
       :messages="messages"
       :loading="chatStore.isLoading || serverStore.isLoadingChannels"
       @send-message="handleSendMessage"
+      @send-image="handleSendImage"
       @logout="handleLogout"
     />
   </div>

@@ -103,6 +103,21 @@ export const useChatStore = defineStore('chat', () => {
     return true
   }
 
+  const sendImage = async (channelId, file) => {
+    if (!channelId || !file) return null
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const { data } = await api.post(`/api/channels/${channelId}/images`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+
+    return data
+  }
+
   const disconnectWebSocket = () => {
     if (activeSubscription.value) {
       activeSubscription.value.unsubscribe()
@@ -136,6 +151,7 @@ export const useChatStore = defineStore('chat', () => {
     connectWebSocket,
     subscribeToChannel,
     sendMessage,
+    sendImage,
     disconnectWebSocket,
     reset,
   }

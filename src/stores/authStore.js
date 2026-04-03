@@ -69,13 +69,13 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const login = async (email, password) => {
+  const login = async (identifier, password) => {
     try {
       isLoading.value = true
       error.value = ''
 
       const response = await api.post('/api/auth/login', {
-        email,
+        identifier: identifier?.trim(),
         password,
       })
 
@@ -90,7 +90,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       return response.data
     } catch (err) {
-      error.value = err.response?.data?.message || 'Email hoặc mật khẩu không đúng.'
+      error.value = err.response?.data?.message || 'Tên đăng nhập/email hoặc mật khẩu không đúng.'
       throw err
     } finally {
       isLoading.value = false
