@@ -61,8 +61,29 @@ const handleFileSelected = (event) => {
   event.target.value = ''
 }
 
+const isImageMessage = (message) => {
+  const text = String(message?.content || '').trim()
+  if (!text) return false
+
+  const lower = text.toLowerCase()
+  const isHttp = lower.startsWith('http://') || lower.startsWith('https://')
+  const hasImageExt = /\.(png|jpe?g|gif|webp|bmp|svg)(\?.*)?$/i.test(lower)
+
+  return isHttp && hasImageExt
+}
+
 const getImageUrl = (message) => {
-  return message?.imageUrl || message?.url || message?.image || null
+  if (message?.imageUrl) return message.imageUrl
+  if (message?.url) return message.url
+  if (message?.image) return message.image
+  if (isImageMessage(message)) return message.content.trim()
+  return null
+}
+
+const getTextContent = (message) => {
+  if (!message?.content) return ''
+  if (isImageMessage(message)) return ''
+  return message.content
 }
 </script>
 
@@ -89,7 +110,7 @@ const getImageUrl = (message) => {
             <p class="chat-window__sender-name">{{ message.senderUsername || message.username || 'Unknown' }}</p>
             <span class="chat-window__message-time">{{ formatTime(message.createdAt) }}</span>
           </div>
-          <p v-if="message.content" class="chat-window__message-content">{{ message.content }}</p>
+          <p v-if="getTextContent(message)" class="chat-window__message-content">{{ getTextContent(message) }}</p>
           <img
             v-if="getImageUrl(message)"
             :src="getImageUrl(message)"

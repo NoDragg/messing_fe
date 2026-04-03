@@ -9,6 +9,7 @@ export const useServerStore = defineStore('server', () => {
   const isLoadingServers = ref(false)
   const isLoadingChannels = ref(false)
   const isCreatingServer = ref(false)
+  const isCreatingChannel = ref(false)
   const isInvitingMember = ref(false)
 
   const activeServerId = computed(() => activeServer.value?.id || null)
@@ -41,6 +42,26 @@ export const useServerStore = defineStore('server', () => {
       }
 
       return created
+    } finally {
+      isCreatingServer.value = false
+    }
+  }
+
+  const deleteServer = async (serverId) => {
+    if (!serverId) return false
+
+    try {
+      isCreatingServer.value = true
+      await api.delete(`/api/servers/${serverId}`)
+
+      servers.value = servers.value.filter((s) => s.id !== serverId)
+
+      if (activeServer.value?.id === serverId) {
+        activeServer.value = servers.value.length > 0 ? servers.value[0] : null
+        channels.value = []
+      }
+
+      return true
     } finally {
       isCreatingServer.value = false
     }
@@ -88,6 +109,62 @@ export const useServerStore = defineStore('server', () => {
     }
   }
 
+  const createChannel = async (serverId, payload) => {
+    if (!serverId) return null
+
+    try {
+      isCreatingChannel.value = true
+      const response = await api.post(`/api/servers/${serverId}/channels`, payload)
+      const created = response.data
+
+      if (created) {
+        channels.value.push(created)
+      }
+
+      return created
+    } finally {
+      isCreatingChannel.value = false
+    }
+  }
+
+  const renameChannel = async (serverId, channelId, payload) => {
+    if (!serverId || !channelId) return null
+
+    try {
+      isCreatingChannel.value = true
+      const response = await api.put(`/api/servers/${serverId}/channels/${channelId}`, payload)
+      const updated = response.data
+
+      if (updated) {
+        const targetIndex = channels.value.findIndex((channel) => channel.id === channelId)
+        if (targetIndex !== -1) {
+          channels.value[targetIndex] = {
+            ...channels.value[targetIndex],
+            ...updated,
+          }
+        }
+      }
+
+      return updated
+    } finally {
+      isCreatingChannel.value = false
+    }
+  }
+
+  const deleteChannel = async (serverId, channelId) => {
+    if (!serverId || !channelId) return false
+
+    try {
+      isCreatingChannel.value = true
+      await api.delete(`/api/servers/${serverId}/channels/${channelId}`)
+
+      channels.value = channels.value.filter((channel) => channel.id !== channelId)
+      return true
+    } finally {
+      isCreatingChannel.value = false
+    }
+  }
+
   const acceptInvite = async (code) => {
     if (!code) return null
 
@@ -119,10 +196,15 @@ export const useServerStore = defineStore('server', () => {
     isLoadingServers,
     isLoadingChannels,
     isCreatingServer,
+    isCreatingChannel,
     isInvitingMember,
     activeServerId,
     fetchServers,
     createServer,
+    deleteServer,
+    createChannel,
+    renameChannel,
+    deleteChannel,
     createInviteLink,
     inviteMember,
     acceptInvite,

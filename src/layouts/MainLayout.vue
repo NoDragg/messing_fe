@@ -1,17 +1,26 @@
 <script setup>
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { useServerStore } from '@/stores/serverStore'
 import { useChatStore } from '@/stores/chatStore'
+import { useToast } from '@/composables/useToast'
+
 import ServerSidebar from '@/components/ServerSidebar.vue'
 import ChannelSidebar from '@/components/ChannelSidebar.vue'
 import ChatWindow from '@/components/ChatWindow.vue'
+
+import CreateServerModal from '@/components/modals/CreateServerModal.vue'
+import CreateChannelModal from '@/components/modals/CreateChannelModal.vue'
+import RenameChannelModal from '@/components/modals/RenameChannelModal.vue'
+import DeleteChannelModal from '@/components/modals/DeleteChannelModal.vue'
+import DeleteServerModal from '@/components/modals/DeleteServerModal.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const serverStore = useServerStore()
 const chatStore = useChatStore()
+const { showToast } = useToast()
 
 const currentUser = computed(() => authStore.user || { username: 'Guest' })
 const servers = computed(() => serverStore.servers)
@@ -24,6 +33,15 @@ const currentChannelName = computed(() => {
   return matched?.name || 'general'
 })
 const messages = computed(() => chatStore.messages)
+
+// Modal visibility state
+const showCreateServerModal = ref(false)
+const showCreateChannelModal = ref(false)
+const showRenameChannelModal = ref(false)
+const showDeleteChannelModal = ref(false)
+const showDeleteServerModal = ref(false)
+
+const targetChannel = ref(null)
 
 const getChannelId = (channel) => channel?.id ?? channel?.channelId ?? null
 
@@ -43,13 +61,71 @@ const handleSelectServer = async (serverId) => {
   }
 }
 
-const handleCreateServer = async () => {
-  const name = window.prompt('Nhập tên server mới:')
-  if (!name?.trim()) return
+// Modal open handlers
+const openCreateServerModal = () => {
+  showCreateServerModal.value = true
+}
 
-  const payload = { name: name.trim() }
-  const created = await serverStore.createServer(payload)
+const openDeleteServerModal = () => {
+  if (!serverStore.activeServerId) {
+    showToast('Bạn cần chọn server trước.', 'warning')
+    return
+  }
 
+  const currentUserId = authStore.user?.id
+  const ownerId = serverStore.activeServer?.ownerId
+  if (currentUserId !== ownerId) {
+    showToast('Chỉ owner của server mới có quyền xóa server.', 'error')
+    return
+  }
+
+  showDeleteServerModal.value = true
+}
+
+const openCreateChannelModal = () => {
+  if (!serverStore.activeServerId) {
+    showToast('Bạn cần chọn server trước khi tạo channel.', 'warning')
+    return
+  }
+
+  const currentUserId = authStore.user?.id
+  const ownerId = serverStore.activeServer?.ownerId
+  if (currentUserId !== ownerId) {
+    showToast('Chỉ owner của server mới có quyền tạo channel.', 'error')
+    return
+  }
+
+  showCreateChannelModal.value = true
+}
+
+const openRenameChannelModal = (channel) => {
+  const currentUserId = authStore.user?.id
+  const ownerId = serverStore.activeServer?.ownerId
+  if (currentUserId !== ownerId) {
+    showToast('Chỉ owner của server mới có quyền đổi tên channel.', 'error')
+    return
+  }
+
+  if (!channel) return
+  targetChannel.value = channel
+  showRenameChannelModal.value = true
+}
+
+const openDeleteChannelModal = (channel) => {
+  const currentUserId = authStore.user?.id
+  const ownerId = serverStore.activeServer?.ownerId
+  if (currentUserId !== ownerId) {
+    showToast('Chỉ owner của server mới có quyền xóa channel.', 'error')
+    return
+  }
+
+  if (!channel) return
+  targetChannel.value = channel
+  showDeleteChannelModal.value = true
+}
+
+// Logic sau khi tạo/xoá
+const handleServerCreated = async (created) => {
   if (created?.id) {
     const nextChannels = await serverStore.fetchChannelsByServer(created.id)
     const firstChannelId = getChannelId(nextChannels[0])
@@ -60,29 +136,34 @@ const handleCreateServer = async () => {
   }
 }
 
-const handleInviteUser = async () => {
-  if (!serverStore.activeServerId) {
-    window.alert('Bạn cần chọn server trước khi tạo lời mời.')
-    return
+const handleChannelCreated = async (created) => {
+  const createdId = getChannelId(created)
+  if (createdId) {
+    await handleSelectChannel(createdId)
   }
+}
 
-  try {
-    const response = await serverStore.createInviteLink(serverStore.activeServerId)
-    if (!response?.code) {
-      window.alert('Không thể tạo mã mời. Vui lòng thử lại.')
-      return
+const handleChannelDeleted = async (channelIdToDelete) => {
+  if (chatStore.currentChannelId === channelIdToDelete) {
+    if (channels.value.length > 0) {
+      await handleSelectChannel(channels.value[0].id)
+    } else {
+      chatStore.currentChannelId = null
+      chatStore.messages = []
     }
+  }
+}
 
-    const inviteText = `${window.location.origin}/invite/${response.code}`
-
-    try {
-      await navigator.clipboard.writeText(inviteText)
-      window.alert(`Đã tạo mã mời: ${response.code}\nLink đã được copy:\n${inviteText}`)
-    } catch {
-      window.alert(`Đã tạo mã mời: ${response.code}\nLink mời:\n${inviteText}`)
+const handleServerDeleted = async () => {
+  if (serverStore.activeServerId) {
+    const nextChannels = await serverStore.fetchChannelsByServer(serverStore.activeServerId)
+    const firstChannelId = getChannelId(nextChannels[0])
+    if (firstChannelId) {
+      await handleSelectChannel(firstChannelId)
     }
-  } catch (error) {
-    window.alert(error.response?.data?.message || 'Tạo lời mời thất bại')
+  } else {
+    chatStore.currentChannelId = null
+    chatStore.messages = []
   }
 }
 
@@ -115,19 +196,9 @@ const handleSendImage = async (file) => {
   if (!chatStore.currentChannelId || !file) return
 
   try {
-    const result = await chatStore.sendImage(chatStore.currentChannelId, file)
-
-    if (result) {
-      chatStore.messages.push({
-        id: result.id || Date.now(),
-        senderUsername: result.senderUsername || currentUser.value?.username || currentUser.value?.email || 'Guest',
-        imageUrl: result.imageUrl || result.url || result.content,
-        content: result.content || '',
-        createdAt: result.createdAt || new Date().toISOString(),
-      })
-    }
+    await chatStore.sendImage(chatStore.currentChannelId, file)
   } catch (error) {
-    window.alert(error.response?.data?.message || 'Gửi ảnh thất bại')
+    showToast(error.response?.data?.message || 'Gửi ảnh thất bại', 'error')
   }
 }
 
@@ -172,7 +243,7 @@ watch(
       :current-server-id="currentServerId"
       :is-creating-server="serverStore.isCreatingServer"
       @select-server="handleSelectServer"
-      @create-server="handleCreateServer"
+      @create-server="openCreateServerModal"
     />
 
     <ChannelSidebar
@@ -181,7 +252,10 @@ watch(
       :current-channel-id="currentChannelId"
       :current-user="currentUser"
       @select-channel="handleSelectChannel"
-      @invite-user="handleInviteUser"
+      @rename-channel="openRenameChannelModal"
+      @delete-channel="openDeleteChannelModal"
+      @delete-server="openDeleteServerModal"
+      @create-channel="openCreateChannelModal"
       @open-settings="router.push({ name: 'settings' })"
       @logout="handleLogout"
     />
@@ -192,6 +266,32 @@ watch(
       :loading="chatStore.isLoading || serverStore.isLoadingChannels"
       @send-message="handleSendMessage"
       @send-image="handleSendImage"
+    />
+
+    <CreateServerModal
+      v-model:show="showCreateServerModal"
+      @created="handleServerCreated"
+    />
+
+    <CreateChannelModal
+      v-model:show="showCreateChannelModal"
+      @created="handleChannelCreated"
+    />
+
+    <RenameChannelModal
+      v-model:show="showRenameChannelModal"
+      :channel="targetChannel"
+    />
+
+    <DeleteChannelModal
+      v-model:show="showDeleteChannelModal"
+      :channel="targetChannel"
+      @deleted="handleChannelDeleted"
+    />
+
+    <DeleteServerModal
+      v-model:show="showDeleteServerModal"
+      @deleted="handleServerDeleted"
     />
   </div>
 </template>

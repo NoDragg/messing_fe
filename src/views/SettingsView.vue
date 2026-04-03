@@ -3,6 +3,8 @@ import { computed, reactive, ref } from 'vue'
 import { Camera, Eye, EyeOff, LogOut, Save, Settings } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
+import AppModal from '@/components/AppModal.vue'
+import AppToast from '@/components/AppToast.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -29,6 +31,7 @@ const showConfirmPassword = ref(false)
 const isSavingProfile = ref(false)
 const isSavingPassword = ref(false)
 const isLoggingOut = ref(false)
+const showLogoutModal = ref(false)
 
 const toast = reactive({
   show: false,
@@ -149,10 +152,24 @@ const handleSaveChanges = async () => {
   }
 }
 
-const handleLogout = async () => {
+const handleLogout = () => {
+  showLogoutModal.value = true
+}
+
+const closeLogoutModal = () => {
+  if (isLoggingOut.value) return
+  showLogoutModal.value = false
+}
+
+const confirmLogout = async () => {
   isLoggingOut.value = true
-  authStore.logout()
-  await router.push({ name: 'login' })
+  try {
+    authStore.logout()
+    await router.push({ name: 'login' })
+  } finally {
+    isLoggingOut.value = false
+    showLogoutModal.value = false
+  }
 }
 </script>
 
@@ -292,9 +309,18 @@ const handleLogout = async () => {
       </div>
     </div>
 
-    <div v-if="toast.show" class="settings-toast" :class="`settings-toast--${toast.type}`">
-      {{ toast.message }}
-    </div>
+    <AppModal
+      :show="showLogoutModal"
+      title="Xác nhận đăng xuất"
+      subtitle="Bạn có chắc muốn đăng xuất khỏi tài khoản hiện tại?"
+      confirm-text="Đăng xuất"
+      cancel-text="Hủy"
+      :loading="isLoggingOut"
+      @close="closeLogoutModal"
+      @confirm="confirmLogout"
+    />
+
+    <AppToast :show="toast.show" :message="toast.message" :type="toast.type" />
   </main>
 </template>
 
@@ -495,24 +521,6 @@ const handleLogout = async () => {
   font-size: 13px;
 }
 
-.settings-toast {
-  position: fixed;
-  right: 24px;
-  bottom: 24px;
-  border-radius: 10px;
-  padding: 12px 14px;
-  color: #fff;
-  font-size: 14px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
-}
-
-.settings-toast--success {
-  background-color: #16a34a;
-}
-
-.settings-toast--error {
-  background-color: #dc2626;
-}
 
 @keyframes settings-spin {
   from { transform: rotate(0deg); }
