@@ -16,7 +16,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['send-message', 'send-image', 'logout'])
+const emit = defineEmits(['send-message', 'send-image'])
 
 const newMessage = ref('')
 const fileInputRef = ref(null)
@@ -69,13 +69,6 @@ const getImageUrl = (message) => {
   <section class="chat-window">
     <header class="chat-window__header">
       <h2 class="chat-window__title"># {{ channelName }}</h2>
-      <button
-        type="button"
-        class="chat-window__logout-button"
-        @click="emit('logout')"
-      >
-        Đăng xuất
-      </button>
     </header>
 
     <div ref="messageListRef" class="chat-window__message-list">

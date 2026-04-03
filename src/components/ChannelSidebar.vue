@@ -18,7 +18,7 @@ defineProps({
   },
 })
 
-const emit = defineEmits(['select-channel', 'logout', 'invite-user'])
+const emit = defineEmits(['select-channel', 'open-settings', 'invite-user'])
 </script>
 
 <template>
@@ -63,11 +63,11 @@ const emit = defineEmits(['select-channel', 'logout', 'invite-user'])
 
       <button
         type="button"
-        class="channel-sidebar__logout-button"
-        title="Đăng xuất"
-        @click="emit('logout')"
+        class="channel-sidebar__settings-button"
+        title="Cài đặt"
+        @click="emit('open-settings')"
       >
-        Logout
+        Settings
       </button>
     </footer>
   </aside>
@@ -203,10 +203,10 @@ const emit = defineEmits(['select-channel', 'logout', 'invite-user'])
   color: #ffffff;
 }
 
-.channel-sidebar__logout-button {
+.channel-sidebar__settings-button {
   border: none;
   border-radius: 4px;
-  background-color: #dc2626;
+  background-color: #0ea5e9;
   padding: 4px 8px;
   color: #ffffff;
   font-size: 12px;
@@ -214,7 +214,7 @@ const emit = defineEmits(['select-channel', 'logout', 'invite-user'])
   transition: background-color 0.2s ease;
 }
 
-.channel-sidebar__logout-button:hover {
-  background-color: #ef4444;
+.channel-sidebar__settings-button:hover {
+  background-color: #0284c7;
 }
 </style>

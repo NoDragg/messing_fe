@@ -116,6 +116,64 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = ''
   }
 
+  const updateProfile = async (payload, avatarFile = null) => {
+    isLoading.value = true
+    error.value = ''
+
+    try {
+      const nextDisplayName = payload?.displayName ?? ''
+      const nextBio = payload?.bio ?? ''
+
+      const profileResponse = await api.put('/api/users/me/profile', {
+        displayName: nextDisplayName,
+        bio: nextBio,
+      })
+
+      let avatarUrl = user.value?.avatarUrl || ''
+      if (avatarFile) {
+        const formData = new FormData()
+        formData.append('avatar', avatarFile)
+        const avatarResponse = await api.post('/api/users/me/avatar', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        })
+        avatarUrl = avatarResponse.data?.avatarUrl || avatarResponse.data?.url || avatarUrl
+      }
+
+      user.value = {
+        ...(user.value || {}),
+        username: profileResponse.data?.displayName ?? nextDisplayName,
+        bio: profileResponse.data?.bio ?? nextBio,
+        avatarUrl,
+      }
+
+      localStorage.setItem('user', JSON.stringify(user.value))
+
+      return user.value
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Cập nhật hồ sơ thất bại.'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  const changePassword = async (payload) => {
+    isLoading.value = true
+    error.value = ''
+
+    try {
+      const response = await api.put('/api/users/me/password', payload)
+      return response.data
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Đổi mật khẩu thất bại.'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   const logout = () => {
     clearAuthData()
   }
@@ -142,6 +200,8 @@ export const useAuthStore = defineStore('auth', () => {
     error,
     login,
     register,
+    updateProfile,
+    changePassword,
     logout,
     initAuth,
     ensureValidSession,
