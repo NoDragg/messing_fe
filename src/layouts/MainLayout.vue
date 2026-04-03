@@ -146,7 +146,7 @@ watch(
 </script>
 
 <template>
-  <div class="flex h-screen w-screen overflow-hidden bg-gray-900 text-gray-100">
+  <div class="main-layout">
     <ServerSidebar
       :servers="servers"
       :current-server-id="currentServerId"
@@ -174,3 +174,14 @@ watch(
     />
   </div>
 </template>
+
+<style scoped>
+.main-layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background-color: rgb(17 24 39);
+  color: rgb(243 244 246);
+}
+</style>

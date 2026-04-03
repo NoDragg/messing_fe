@@ -40,19 +40,19 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex h-screen w-screen items-center justify-center bg-gray-900 px-4 text-gray-100">
-    <div class="w-full max-w-md rounded-xl border border-gray-700 bg-gray-800 p-6 shadow-2xl">
-      <h1 class="mb-2 text-center text-xl font-bold text-white">Tham gia server</h1>
+  <div class="invite-view">
+    <div class="invite-view__card">
+      <h1 class="invite-view__title">Tham gia server</h1>
 
-      <p v-if="isLoading" class="text-center text-sm text-gray-300">{{ message }}</p>
-      <p v-else-if="error" class="text-center text-sm text-red-400">{{ error }}</p>
-      <p v-else class="text-center text-sm text-emerald-400">{{ message }}</p>
+      <p v-if="isLoading" class="invite-view__status invite-view__status--loading">{{ message }}</p>
+      <p v-else-if="error" class="invite-view__status invite-view__status--error">{{ error }}</p>
+      <p v-else class="invite-view__status invite-view__status--success">{{ message }}</p>
 
-      <div class="mt-6 flex justify-center">
+      <div class="invite-view__action-wrap">
         <RouterLink
           v-if="error"
           :to="{ name: 'home' }"
-          class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500"
+          class="invite-view__home-link"
         >
           Về trang chính
         </RouterLink>
@@ -60,3 +60,75 @@ onMounted(async () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.invite-view {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  align-items: center;
+  justify-content: center;
+  background-color: #111827;
+  padding: 0 16px;
+  color: #f3f4f6;
+  box-sizing: border-box;
+}
+
+.invite-view__card {
+  width: 100%;
+  max-width: 448px;
+  border: 1px solid #374151;
+  border-radius: 12px;
+  background-color: #1f2937;
+  padding: 24px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  box-sizing: border-box;
+}
+
+.invite-view__title {
+  margin: 0 0 8px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.invite-view__status {
+  margin: 0;
+  text-align: center;
+  font-size: 14px;
+}
+
+.invite-view__status--loading {
+  color: #d1d5db;
+}
+
+.invite-view__status--error {
+  color: #f87171;
+}
+
+.invite-view__status--success {
+  color: #34d399;
+}
+
+.invite-view__action-wrap {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.invite-view__home-link {
+  border-radius: 6px;
+  background-color: #4f46e5;
+  padding: 8px 16px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+
+.invite-view__home-link:hover {
+  background-color: #6366f1;
+}
+</style>

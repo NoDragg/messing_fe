@@ -26,61 +26,61 @@ const handleRegister = async () => {
 </script>
 
 <template>
-  <div class="flex min-h-screen w-screen items-center justify-center bg-[#5865F2] px-4">
-    <div class="w-[480px] max-w-full rounded-[5px] bg-[#313338] p-8 shadow-[0_2px_10px_0_rgba(0,0,0,0.2)]">
-      <h1 class="text-center text-2xl font-semibold text-[#f2f3f5]">Tạo tài khoản</h1>
-      <p class="mt-2 mb-6 text-center text-[15px] text-[#b5bac1]">Tham gia Messing Chat ngay hôm nay!</p>
+  <div class="register-view">
+    <div class="register-view__card">
+      <h1 class="register-view__title">Tạo tài khoản</h1>
+      <p class="register-view__subtitle">Tham gia Messing Chat ngay hôm nay!</p>
 
-      <form class="space-y-4" @submit.prevent="handleRegister">
+      <form class="register-view__form" @submit.prevent="handleRegister">
         <div>
-          <label class="mb-2 block text-xs font-bold uppercase tracking-wide text-[#b5bac1]">
-            Username <span class="text-red-500">*</span>
+          <label class="register-view__label">
+            Username <span class="register-view__required">*</span>
           </label>
           <input
             v-model="form.username"
             type="text"
             required
-            class="w-full rounded-[3px] bg-[#1e1f22] p-2.5 text-[15px] text-[#dbdee1] placeholder-[#87909c] outline-none transition focus:ring-0"
+            class="register-view__input"
             placeholder="your_name"
           />
         </div>
 
         <div>
-           <label class="mb-2 block text-xs font-bold uppercase tracking-wide text-[#b5bac1]">
-            Email <span class="text-red-500">*</span>
+          <label class="register-view__label">
+            Email <span class="register-view__required">*</span>
           </label>
           <input
             v-model="form.email"
             type="email"
             required
-            class="w-full rounded-[3px] bg-[#1e1f22] p-2.5 text-[15px] text-[#dbdee1] placeholder-[#87909c] outline-none transition focus:ring-0"
+            class="register-view__input"
             placeholder="you@example.com"
           />
         </div>
 
         <div>
-           <label class="mb-2 block text-xs font-bold uppercase tracking-wide text-[#b5bac1]">
-            Password <span class="text-red-500">*</span>
+          <label class="register-view__label">
+            Password <span class="register-view__required">*</span>
           </label>
           <input
             v-model="form.password"
             type="password"
             required
-            class="w-full rounded-[3px] bg-[#1e1f22] p-2.5 text-[15px] text-[#dbdee1] placeholder-[#87909c] outline-none transition focus:ring-0"
+            class="register-view__input"
             placeholder="••••••••"
           />
         </div>
 
-        <p v-if="authStore.error" class="text-sm text-red-400">{{ authStore.error }}</p>
+        <p v-if="authStore.error" class="register-view__error">{{ authStore.error }}</p>
 
         <button
           type="submit"
           :disabled="authStore.isLoading"
-          class="flex w-full items-center justify-center gap-2 rounded-[3px] bg-[#5865F2] py-2.5 text-[15px] font-medium text-white transition hover:bg-[#4752C4] disabled:cursor-not-allowed disabled:opacity-60 mt-6"
+          class="register-view__submit-button"
         >
           <svg
             v-if="authStore.isLoading"
-            class="h-4 w-4 animate-spin"
+            class="register-view__spinner"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -96,12 +96,151 @@ const handleRegister = async () => {
         </button>
       </form>
 
-      <p class="mt-4 text-[14px] text-[#b5bac1]">
+      <p class="register-view__login-hint">
         Đã có tài khoản?
-        <RouterLink class="font-medium text-[#00a8fc] hover:underline" :to="{ name: 'login' }">
+        <RouterLink class="register-view__login-link" :to="{ name: 'login' }">
           Đăng nhập
         </RouterLink>
       </p>
     </div>
   </div>
 </template>
+
+<style scoped>
+.register-view {
+  display: flex;
+  min-height: 100vh;
+  width: 100vw;
+  align-items: center;
+  justify-content: center;
+  background-color: #5865f2;
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+
+.register-view__card {
+  width: 480px;
+  max-width: 100%;
+  border-radius: 5px;
+  background-color: #313338;
+  padding: 32px;
+  box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.2);
+  box-sizing: border-box;
+}
+
+.register-view__title {
+  margin: 0;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 600;
+  color: #f2f3f5;
+}
+
+.register-view__subtitle {
+  margin: 8px 0 24px;
+  text-align: center;
+  font-size: 15px;
+  color: #b5bac1;
+}
+
+.register-view__form > * + * {
+  margin-top: 16px;
+}
+
+.register-view__label {
+  margin-bottom: 8px;
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #b5bac1;
+}
+
+.register-view__required {
+  color: #ef4444;
+}
+
+.register-view__input {
+  width: 100%;
+  border: none;
+  border-radius: 3px;
+  background-color: #1e1f22;
+  padding: 10px;
+  color: #dbdee1;
+  font-size: 15px;
+  box-sizing: border-box;
+}
+
+.register-view__input::placeholder {
+  color: #87909c;
+}
+
+.register-view__input:focus {
+  outline: none;
+}
+
+.register-view__error {
+  margin: 0;
+  font-size: 14px;
+  color: #f87171;
+}
+
+.register-view__submit-button {
+  margin-top: 24px;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  border-radius: 3px;
+  background-color: #5865f2;
+  padding: 10px;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.register-view__submit-button:hover {
+  background-color: #4752c4;
+}
+
+.register-view__submit-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.register-view__spinner {
+  height: 16px;
+  width: 16px;
+  animation: register-spin 1s linear infinite;
+}
+
+@keyframes register-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.register-view__login-hint {
+  margin-top: 16px;
+  margin-bottom: 0;
+  font-size: 14px;
+  color: #b5bac1;
+}
+
+.register-view__login-link {
+  color: #00a8fc;
+  font-weight: 500;
+}
+
+.register-view__login-link:hover {
+  text-decoration: underline;
+}
+</style>

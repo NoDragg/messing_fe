@@ -40,51 +40,50 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex h-screen w-screen items-center justify-center bg-gray-900 px-4">
-    <!-- Form Card -->
-    <div class="w-[480px] max-w-full rounded-md bg-gray-800 p-8 shadow-2xl">
-      <h1 class="text-center text-2xl font-bold text-white">Chào mừng trở lại!</h1>
-      <p class="mt-2 text-center text-sm text-gray-400">Rất vui khi thấy bạn quay lại!</p>
+  <div class="login-view">
+    <div class="login-view__card">
+      <h1 class="login-view__title">Chào mừng trở lại!</h1>
+      <p class="login-view__subtitle">Rất vui khi thấy bạn quay lại!</p>
 
-      <form class="mt-6 space-y-4" @submit.prevent="handleLogin">
+      <form class="login-view__form" @submit.prevent="handleLogin">
         <div>
-          <label class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-300">
-            Email <span class="text-red-500">*</span>
+          <label class="login-view__label">
+            Email <span class="login-view__required">*</span>
           </label>
           <input
             v-model="form.email"
             type="email"
             required
-            class="w-full rounded bg-gray-900 px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-0"
+            class="login-view__input"
             placeholder="you@example.com"
           />
         </div>
 
         <div>
-          <label class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-300">
-            Mật khẩu <span class="text-red-500">*</span>
+          <label class="login-view__label">
+            Mật khẩu <span class="login-view__required">*</span>
           </label>
           <input
             v-model="form.password"
             type="password"
             required
-            class="w-full rounded bg-gray-900 px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-0"
+            class="login-view__input"
             placeholder="••••••••"
           />
 
-          <button type="button" class="mt-2 text-xs font-medium text-blue-400 hover:underline">Quên mật khẩu?</button>
+          <button type="button" class="login-view__forgot-password">Quên mật khẩu?</button>
         </div>
 
-        <p v-if="authStore.error" class="text-sm text-red-500">{{ authStore.error }}</p>
+        <p v-if="authStore.error" class="login-view__error">{{ authStore.error }}</p>
 
         <button
           type="submit"
           :disabled="authStore.isLoading"
-          class="mt-4 flex w-full items-center justify-center gap-2 rounded bg-indigo-500 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-60"
+          class="login-view__submit-button"
         >
           <svg
             v-if="authStore.isLoading"
-            class="h-4 w-4 animate-spin"
+            class="login-view__spinner"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -100,10 +99,169 @@ onUnmounted(() => {
         </button>
       </form>
 
-      <p class="mt-6 text-sm text-gray-400">
+      <p class="login-view__register-hint">
         Cần một tài khoản?
-        <RouterLink to="/register" class="font-medium text-blue-400 hover:underline">Đăng ký</RouterLink>
+        <RouterLink to="/register" class="login-view__register-link">Đăng ký</RouterLink>
       </p>
     </div>
   </div>
 </template>
+
+<style scoped>
+.login-view {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  align-items: center;
+  justify-content: center;
+  background-color: #111827;
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+
+.login-view__card {
+  width: 480px;
+  max-width: 100%;
+  border-radius: 6px;
+  background-color: #1f2937;
+  padding: 32px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  box-sizing: border-box;
+}
+
+.login-view__title {
+  margin: 0;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.login-view__subtitle {
+  margin-top: 8px;
+  margin-bottom: 0;
+  text-align: center;
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+.login-view__form {
+  margin-top: 24px;
+}
+
+.login-view__form > * + * {
+  margin-top: 16px;
+}
+
+.login-view__label {
+  margin-bottom: 8px;
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #d1d5db;
+}
+
+.login-view__required {
+  color: #ef4444;
+}
+
+.login-view__input {
+  width: 100%;
+  border: none;
+  border-radius: 4px;
+  background-color: #111827;
+  padding: 10px 12px;
+  color: #ffffff;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.login-view__input::placeholder {
+  color: #6b7280;
+}
+
+.login-view__input:focus {
+  outline: none;
+}
+
+.login-view__forgot-password {
+  margin-top: 8px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: #60a5fa;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.login-view__forgot-password:hover {
+  text-decoration: underline;
+}
+
+.login-view__error {
+  margin: 0;
+  font-size: 14px;
+  color: #ef4444;
+}
+
+.login-view__submit-button {
+  margin-top: 16px;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  border-radius: 4px;
+  background-color: #6366f1;
+  padding: 10px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.login-view__submit-button:hover {
+  background-color: #4f46e5;
+}
+
+.login-view__submit-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.login-view__spinner {
+  height: 16px;
+  width: 16px;
+  animation: login-spin 1s linear infinite;
+}
+
+@keyframes login-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.login-view__register-hint {
+  margin-top: 24px;
+  margin-bottom: 0;
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+.login-view__register-link {
+  color: #60a5fa;
+  font-weight: 500;
+}
+
+.login-view__register-link:hover {
+  text-decoration: underline;
+}
+</style>
