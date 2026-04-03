@@ -89,6 +89,19 @@ const getTextContent = (message) => {
   return message.content
 }
 
+const formatTextContent = (text) => {
+  if (!text) return ''
+  
+  const div = document.createElement('div')
+  div.appendChild(document.createTextNode(text))
+  const escapedText = div.innerHTML
+
+  const urlRegex = /(https?:\/\/[^\s]+)/g
+  return escapedText.replace(urlRegex, (url) => {
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="chat-window__text-link">${url}</a>`
+  })
+}
+
 const getMessageUsername = (message) => {
   const currentUserId = authStore.user?.id
   const msgSenderId = message.senderId || message.userId
@@ -139,7 +152,11 @@ const getMessageAvatarUrl = (message) => {
             <p class="chat-window__sender-name">{{ getMessageUsername(message) }}</p>
             <span class="chat-window__message-time">{{ formatTime(message.createdAt) }}</span>
           </div>
-          <p v-if="getTextContent(message)" class="chat-window__message-content">{{ getTextContent(message) }}</p>
+          <p 
+            v-if="getTextContent(message)" 
+            class="chat-window__message-content"
+            v-html="formatTextContent(getTextContent(message))"
+          ></p>
           <img
             v-if="getImageUrl(message)"
             :src="getImageUrl(message)"
@@ -227,6 +244,28 @@ const getMessageAvatarUrl = (message) => {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
+  
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: #4b5563 transparent;
+}
+
+/* Chrome, Edge, Safari */
+.chat-window__message-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat-window__message-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-window__message-list::-webkit-scrollbar-thumb {
+  background-color: #4b5563;
+  border-radius: 4px;
+}
+
+.chat-window__message-list::-webkit-scrollbar-thumb:hover {
+  background-color: #6b7280;
 }
 
 .chat-window__message-list > * + * {
@@ -350,5 +389,15 @@ const getMessageAvatarUrl = (message) => {
 
 .chat-window__composer-input:focus {
   outline: none;
+}
+
+.chat-window__message-content :deep(.chat-window__text-link) {
+  color: #60a5fa;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.chat-window__message-content :deep(.chat-window__text-link:hover) {
+  color: #93c5fd;
 }
 </style>
