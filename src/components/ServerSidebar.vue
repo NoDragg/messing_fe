@@ -35,7 +35,13 @@ const getServerInitial = (server) => {
         }"
         @click="emit('select-server', server.id)"
       >
-        {{ getServerInitial(server) }}
+        <img
+          v-if="server.iconUrl"
+          :src="server.iconUrl"
+          :alt="server.name"
+          class="server-sidebar__server-icon"
+        />
+        <span v-else>{{ getServerInitial(server) }}</span>
       </button>
 
       <div class="server-sidebar__divider"></div>
@@ -71,6 +77,7 @@ const getServerInitial = (server) => {
 }
 
 .server-sidebar__server-button {
+  position: relative;
   display: flex;
   height: 48px;
   width: 48px;
@@ -84,11 +91,25 @@ const getServerInitial = (server) => {
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
+  overflow: hidden;
+  padding: 0;
+  line-height: 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.server-sidebar__server-icon {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+  flex-shrink: 0;
 }
 
 .server-sidebar__server-button:hover {
-  border-radius: 12px;
   background-color: #6366f1;
+  transform: translateY(-1px);
 }
 
 .server-sidebar__server-button--active {

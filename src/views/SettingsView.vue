@@ -1,10 +1,11 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
-import { Camera, Eye, EyeOff, LogOut, Save, Settings } from 'lucide-vue-next'
+import { Camera, Eye, EyeOff, LogOut, Save, Settings, ArrowLeft } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import AppModal from '@/components/AppModal.vue'
 import AppToast from '@/components/AppToast.vue'
+import AvatarCropModal from '@/components/modals/AvatarCropModal.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -22,7 +23,15 @@ const passwordForm = reactive({
 
 const avatarPreview = ref(authStore.user?.avatarUrl || '')
 const selectedAvatarFile = ref(null)
+const pendingCropFile = ref(null)
+const showCropModal = ref(false)
 const avatarInputRef = ref(null)
+
+const initialProfile = reactive({
+  displayName: authStore.user?.username || '',
+  bio: authStore.user?.bio || '',
+  avatarUrl: authStore.user?.avatarUrl || '',
+})
 
 const showCurrentPassword = ref(false)
 const showNewPassword = ref(false)
@@ -73,9 +82,28 @@ const passwordValidationError = computed(() => {
   return ''
 })
 
+const hasPasswordInput = computed(() => {
+  return Boolean(passwordForm.currentPassword || passwordForm.newPassword || passwordForm.confirmNewPassword)
+})
+
+const hasAvatarChanged = computed(() => {
+  return Boolean(selectedAvatarFile.value) || (avatarPreview.value || '') !== (initialProfile.avatarUrl || '')
+})
+
+const hasProfileChanged = computed(() => {
+  return (
+    profileForm.displayName.trim() !== (initialProfile.displayName || '').trim() ||
+    profileForm.bio.trim() !== (initialProfile.bio || '').trim() ||
+    hasAvatarChanged.value
+  )
+})
+
+const canSaveProfile = computed(() => hasProfileChanged.value && !profileValidationError.value)
+const canSavePassword = computed(() => hasPasswordInput.value && !passwordValidationError.value)
+
 const canSave = computed(() => {
   if (isSavingProfile.value || isSavingPassword.value || isLoggingOut.value) return false
-  return !profileValidationError.value && !passwordValidationError.value
+  return canSaveProfile.value || canSavePassword.value
 })
 
 const showToast = (message, type = 'success') => {
@@ -106,22 +134,39 @@ const onAvatarSelected = (event) => {
     return
   }
 
-  selectedAvatarFile.value = file
-  avatarPreview.value = URL.createObjectURL(file)
+  pendingCropFile.value = file
+  showCropModal.value = true
   event.target.value = ''
+}
+
+const onAvatarCropped = ({ file, previewUrl }) => {
+  selectedAvatarFile.value = file
+  avatarPreview.value = previewUrl
+  pendingCropFile.value = null
+  showCropModal.value = false
 }
 
 const handleSaveChanges = async () => {
   if (!canSave.value) return
 
-  if (!profileValidationError.value) {
+  if (canSaveProfile.value) {
     isSavingProfile.value = true
     try {
-      await authStore.updateProfile({
+      const updatedUser = await authStore.updateProfile({
         displayName: profileForm.displayName.trim(),
         bio: profileForm.bio.trim(),
       }, selectedAvatarFile.value)
+
       selectedAvatarFile.value = null
+      avatarPreview.value = updatedUser?.avatarUrl || avatarPreview.value
+
+      initialProfile.displayName = updatedUser?.username || profileForm.displayName.trim()
+      initialProfile.bio = updatedUser?.bio || profileForm.bio.trim()
+      initialProfile.avatarUrl = updatedUser?.avatarUrl || initialProfile.avatarUrl
+
+      profileForm.displayName = updatedUser?.username || profileForm.displayName.trim()
+      profileForm.bio = updatedUser?.bio || profileForm.bio.trim()
+
       showToast('Cập nhật hồ sơ thành công.')
     } catch (error) {
       showToast(error.response?.data?.message || 'Cập nhật hồ sơ thất bại.', 'error')
@@ -130,8 +175,7 @@ const handleSaveChanges = async () => {
     }
   }
 
-  const hasPasswordInput = passwordForm.currentPassword || passwordForm.newPassword || passwordForm.confirmNewPassword
-  if (hasPasswordInput && !passwordValidationError.value) {
+  if (canSavePassword.value) {
     isSavingPassword.value = true
     try {
       await authStore.changePassword({
@@ -177,23 +221,28 @@ const confirmLogout = async () => {
   <main class="settings-view">
     <div class="settings-view__container">
       <header class="settings-view__header">
-        <h1 class="settings-view__title">
-          <Settings :size="22" />
-          <span>Settings</span>
-        </h1>
+        <div class="settings-view__title-wrap">
+          <button type="button" class="settings-icon-btn" @click="router.back()" title="Quay lại">
+            <ArrowLeft :size="24" />
+          </button>
+          <h1 class="settings-view__title">
+            <Settings :size="22" />
+            <span>Settings</span>
+          </h1>
+        </div>
         <p class="settings-view__subtitle">Quản lý hồ sơ và bảo mật tài khoản của bạn</p>
       </header>
 
       <section class="settings-card settings-card--center">
         <div class="settings-avatar-wrap">
           <img
-            v-if="avatarPreview"
-            :src="avatarPreview"
+            v-if="avatarPreview || authStore.user?.avatarUrl"
+            :src="avatarPreview || authStore.user?.avatarUrl"
             alt="Avatar"
             class="settings-avatar"
           />
           <div v-else class="settings-avatar settings-avatar--fallback">
-            {{ (authStore.user?.username || 'U').charAt(0).toUpperCase() }}
+            {{ (profileForm.displayName || authStore.user?.username || 'U').charAt(0).toUpperCase() }}
           </div>
 
           <button type="button" class="settings-secondary-btn" @click="openAvatarPicker">
@@ -321,6 +370,13 @@ const confirmLogout = async () => {
     />
 
     <AppToast :show="toast.show" :message="toast.message" :type="toast.type" />
+
+    <AvatarCropModal
+      v-model:show="showCropModal"
+      :file="pendingCropFile"
+      title="Cắt ảnh đại diện"
+      @cropped="onAvatarCropped"
+    />
   </main>
 </template>
 
@@ -343,9 +399,37 @@ const confirmLogout = async () => {
   margin-bottom: 16px;
 }
 
+.settings-view__title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .settings-view__title {
   margin: 0;
   font-size: 28px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-icon-btn {
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  margin-left: -8px;
+}
+
+.settings-icon-btn:hover {
+  background-color: #4b5563;
+  color: #fff;
 }
 
 .settings-view__subtitle {

@@ -1,7 +1,8 @@
 <script setup>
-import { Hash, LogOut, Pencil, Trash2, Settings, UserPlus } from 'lucide-vue-next'
+import { Hash, LogOut, Pencil, Trash2, Settings, UserPlus, Play, Square, Volume2, PlusCircle } from 'lucide-vue-next'
 
 import { useServerStore } from '@/stores/serverStore'
+import { useChatStore } from '@/stores/chatStore'
 import { useToast } from '@/composables/useToast'
 
 defineProps({
@@ -21,11 +22,20 @@ defineProps({
     type: Object,
     default: () => ({ username: 'Guest' }),
   },
+  voiceActiveChannelId: {
+    type: [String, Number],
+    default: null,
+  },
+  voiceParticipantCounts: {
+    type: Object,
+    default: () => ({}),
+  },
 })
 
-const emit = defineEmits(['select-channel', 'rename-channel', 'delete-channel', 'delete-server', 'open-settings', 'create-channel', 'logout'])
+const emit = defineEmits(['select-channel', 'rename-channel', 'delete-channel', 'edit-server', 'delete-server', 'open-settings', 'create-channel', 'logout'])
 
 const serverStore = useServerStore()
+const chatStore = useChatStore()
 const { showToast } = useToast()
 
 const handleInviteUser = async () => {
@@ -63,10 +73,21 @@ const handleInviteUser = async () => {
         <button
           type="button"
           class="channel-sidebar__icon-button"
+          :class="{'channel-sidebar__icon-button--active': chatStore.isDemoing}"
+          :title="chatStore.isDemoing ? 'Dừng Demo Traffic' : 'Chạy Demo Traffic'"
+          @click="chatStore.toggleDemoTraffic"
+        >
+          <Square v-if="chatStore.isDemoing" :size="16" />
+          <Play v-else :size="16" />
+        </button>
+
+        <button
+          type="button"
+          class="channel-sidebar__icon-button"
           title="Tạo channel"
           @click="emit('create-channel')"
         >
-          <Hash :size="16" />
+          <PlusCircle :size="16" />
         </button>
 
         <button
@@ -76,6 +97,15 @@ const handleInviteUser = async () => {
           @click="handleInviteUser"
         >
           <UserPlus :size="16" />
+        </button>
+
+        <button
+          type="button"
+          class="channel-sidebar__icon-button"
+          title="Chỉnh sửa server"
+          @click="emit('edit-server')"
+        >
+          <Pencil :size="16" />
         </button>
 
         <button
@@ -103,8 +133,18 @@ const handleInviteUser = async () => {
           class="channel-sidebar__channel-item"
           @click="emit('select-channel', channel.id)"
         >
-          <span class="channel-sidebar__channel-prefix">#</span>
+          <span class="channel-sidebar__channel-prefix">
+            <Volume2 v-if="channel.type === 'VOICE'" :size="14" />
+            <template v-else>#</template>
+          </span>
           <span class="channel-sidebar__channel-name">{{ channel.name }}</span>
+          <span
+            v-if="channel.type === 'VOICE' && ((voiceParticipantCounts[channel.id] || 0) > 0 || voiceActiveChannelId === channel.id)"
+            class="channel-sidebar__voice-count"
+            :class="{ 'channel-sidebar__voice-count--active': voiceActiveChannelId === channel.id }"
+          >
+            {{ voiceParticipantCounts[channel.id] || 0 }}
+          </span>
         </button>
 
         <div class="channel-sidebar__channel-actions">
@@ -212,6 +252,14 @@ const handleInviteUser = async () => {
   color: #ffffff;
 }
 
+.channel-sidebar__icon-button--active {
+  color: #4ade80;
+}
+
+.channel-sidebar__icon-button--active:hover {
+  color: #22c55e;
+}
+
 .channel-sidebar__icon-button--danger:hover {
   color: #f87171;
 }
@@ -293,6 +341,21 @@ const handleInviteUser = async () => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.channel-sidebar__voice-count {
+  margin-left: 8px;
+  border-radius: 9999px;
+  background-color: #111827;
+  color: #d1d5db;
+  font-size: 11px;
+  line-height: 1;
+  padding: 4px 6px;
+}
+
+.channel-sidebar__voice-count--active {
+  background-color: #1d4ed8;
+  color: #dbeafe;
 }
 
 .channel-sidebar__footer {

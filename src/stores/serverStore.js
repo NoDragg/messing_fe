@@ -47,6 +47,76 @@ export const useServerStore = defineStore('server', () => {
     }
   }
 
+  const updateServer = async (serverId, payload) => {
+    if (!serverId) return null
+
+    try {
+      isCreatingServer.value = true
+      const response = await api.put(`/api/servers/${serverId}`, payload)
+      const updated = response.data
+
+      if (updated) {
+        const index = servers.value.findIndex((server) => server.id === serverId)
+        if (index !== -1) {
+          servers.value[index] = {
+            ...servers.value[index],
+            ...updated,
+          }
+        }
+
+        if (activeServer.value?.id === serverId) {
+          activeServer.value = {
+            ...activeServer.value,
+            ...updated,
+          }
+        }
+      }
+
+      return updated
+    } finally {
+      isCreatingServer.value = false
+    }
+  }
+
+  const updateServerAvatar = async (serverId, file) => {
+    if (!serverId || !file) return null
+
+    try {
+      isCreatingServer.value = true
+
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await api.post(`/api/servers/${serverId}/avatar`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+
+      const iconUrl = response.data?.iconUrl || response.data?.url || null
+      if (iconUrl) {
+        const index = servers.value.findIndex((server) => server.id === serverId)
+        if (index !== -1) {
+          servers.value[index] = {
+            ...servers.value[index],
+            iconUrl,
+          }
+        }
+
+        if (activeServer.value?.id === serverId) {
+          activeServer.value = {
+            ...activeServer.value,
+            iconUrl,
+          }
+        }
+      }
+
+      return iconUrl
+    } finally {
+      isCreatingServer.value = false
+    }
+  }
+
   const deleteServer = async (serverId) => {
     if (!serverId) return false
 
@@ -201,6 +271,8 @@ export const useServerStore = defineStore('server', () => {
     activeServerId,
     fetchServers,
     createServer,
+    updateServer,
+    updateServerAvatar,
     deleteServer,
     createChannel,
     renameChannel,

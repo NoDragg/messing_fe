@@ -9,8 +9,12 @@ export const useChatStore = defineStore('chat', () => {
   const messages = ref([])
   const stompClient = ref(null)
   const activeSubscription = ref(null)
+  const callSignalSubscription = ref(null)
+  const latestCallSignal = ref(null)
   const isConnected = ref(false)
   const isLoading = ref(false)
+  const isDemoing = ref(false)
+  let demoInterval = null
   const error = ref('')
 
   const fetchMessageHistory = async (channelId) => {
@@ -103,6 +107,44 @@ export const useChatStore = defineStore('chat', () => {
     return true
   }
 
+  const unsubscribeFromChannel = () => {
+    if (activeSubscription.value) {
+      activeSubscription.value.unsubscribe()
+      activeSubscription.value = null
+    }
+  }
+
+  const subscribeToCallSignals = (userId) => {
+    if (!stompClient.value || !isConnected.value || !userId) {
+      return
+    }
+
+    if (callSignalSubscription.value) {
+      callSignalSubscription.value.unsubscribe()
+      callSignalSubscription.value = null
+    }
+
+    callSignalSubscription.value = stompClient.value.subscribe(
+      `/queue/call-signals/${userId}`,
+      (payload) => {
+        latestCallSignal.value = JSON.parse(payload.body)
+      },
+    )
+  }
+
+  const sendCallSignal = (payload) => {
+    if (!stompClient.value || !isConnected.value || !payload?.toUserId || !payload?.roomId || !payload?.type) {
+      return false
+    }
+
+    stompClient.value.publish({
+      destination: '/app/call/signal',
+      body: JSON.stringify(payload),
+    })
+
+    return true
+  }
+
   const sendImage = async (channelId, file) => {
     if (!channelId || !file) return null
 
@@ -119,9 +161,11 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   const disconnectWebSocket = () => {
-    if (activeSubscription.value) {
-      activeSubscription.value.unsubscribe()
-      activeSubscription.value = null
+    unsubscribeFromChannel()
+
+    if (callSignalSubscription.value) {
+      callSignalSubscription.value.unsubscribe()
+      callSignalSubscription.value = null
     }
 
     if (stompClient.value) {
@@ -133,10 +177,39 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   const reset = () => {
+    if (isDemoing.value) toggleDemoTraffic()
     disconnectWebSocket()
     currentChannelId.value = null
     messages.value = []
+    latestCallSignal.value = null
     error.value = ''
+  }
+
+  const toggleDemoTraffic = () => {
+    isDemoing.value = !isDemoing.value
+    if (!isDemoing.value) {
+      if (demoInterval) clearInterval(demoInterval)
+      demoInterval = null
+    } else {
+      const fakeNames = ['Hải Yến', 'Minh Tuấn', 'Quốc Bảo', 'Lan Anh', 'Thanh Trúc', 'Hoàng Nam', 'Đức Mạnh', 'Mai Phương']
+      const fakeMessages = [
+        'Chào mọi người nhé!', 'Dự án sao rồi ae?', 'Chiều nay họp lúc mấy giờ nhỉ?',
+        'Có ai giúp mình cái bug này được không?', 'UI/UX trông mượt phết', 
+        'Vừa push code xong, ae check nhé', 'Tí đi cafe không ae?', 'Ok chốt vậy đi',
+        'Quá đẳng cấp!', 'Haha đỉnh thật =)))', 'Thấy cũng ổn rồi đấy', 'Mình đang review code, chờ tý nhé.'
+      ]
+      demoInterval = setInterval(() => {
+        if (!currentChannelId.value) return
+        messages.value.push({
+          id: Date.now() + Math.random(),
+          senderId: 'demo-' + Math.floor(Math.random() * 1000),
+          senderUsername: fakeNames[Math.floor(Math.random() * fakeNames.length)],
+          content: fakeMessages[Math.floor(Math.random() * fakeMessages.length)],
+          createdAt: new Date().toISOString(),
+          isDemo: true
+        })
+      }, 600)
+    }
   }
 
   return {
@@ -144,15 +217,22 @@ export const useChatStore = defineStore('chat', () => {
     messages,
     stompClient,
     activeSubscription,
+    callSignalSubscription,
+    latestCallSignal,
     isConnected,
     isLoading,
     error,
     fetchMessageHistory,
     connectWebSocket,
     subscribeToChannel,
+    unsubscribeFromChannel,
+    subscribeToCallSignals,
     sendMessage,
+    sendCallSignal,
     sendImage,
     disconnectWebSocket,
     reset,
+    isDemoing,
+    toggleDemoTraffic,
   }
 })
