@@ -76,7 +76,8 @@ export const useVoiceStore = defineStore('voice', () => {
 
   const getOrCreateAudioContext = () => {
     if (!audioContext.value) {
-      audioContext.value = new (window.AudioContext || window.webkitAudioContext)()
+      const AudioContextCtor = window.AudioContext || window['webkitAudioContext']
+      audioContext.value = new AudioContextCtor()
     }
 
     return audioContext.value
@@ -215,6 +216,14 @@ export const useVoiceStore = defineStore('voice', () => {
     return stream
   }
 
+  const tryEnsureLocalStream = async () => {
+    try {
+      return await ensureLocalStream()
+    } catch {
+      return null
+    }
+  }
+
   const sendVoiceSignal = ({ toUserId, channelId, type, sdp, candidate, sdpMid, sdpMLineIndex, metadata }) => {
     const currentUserId = authStore.user?.id
     const roomId = channelId || activeVoiceChannelId.value
@@ -284,10 +293,12 @@ export const useVoiceStore = defineStore('voice', () => {
       }
     }
 
-    const stream = await ensureLocalStream()
-    stream.getTracks().forEach((track) => {
-      pc.addTrack(track, stream)
-    })
+    const stream = await tryEnsureLocalStream()
+    if (stream) {
+      stream.getTracks().forEach((track) => {
+        pc.addTrack(track, stream)
+      })
+    }
 
     setPeerConnection(peerUserId, pc)
     return pc
@@ -319,20 +330,24 @@ export const useVoiceStore = defineStore('voice', () => {
       await leaveVoiceChannel()
     }
 
-    try {
-      await ensureLocalStream()
-      activeVoiceChannelId.value = channelId
-      participants.value = []
+    const stream = await tryEnsureLocalStream()
 
-      return sendVoiceSignal({
-        channelId,
-        type: VOICE_SIGNAL_TYPES.VOICE_JOIN,
-      })
-    } catch {
-      lastError.value = 'Không thể truy cập microphone'
-      activeVoiceChannelId.value = null
-      return false
+    activeVoiceChannelId.value = channelId
+    participants.value = []
+
+    if (!stream) {
+      lastError.value = 'Bạn đã vào chế độ nghe-only vì chưa cấp quyền microphone'
+    } else {
+      lastError.value = ''
     }
+
+    return sendVoiceSignal({
+      channelId,
+      type: VOICE_SIGNAL_TYPES.VOICE_JOIN,
+      metadata: {
+        listenOnly: !stream,
+      },
+    })
   }
 
   const rejoinActiveVoiceChannel = async () => {
