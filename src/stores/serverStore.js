@@ -11,8 +11,55 @@ export const useServerStore = defineStore('server', () => {
   const isCreatingServer = ref(false)
   const isCreatingChannel = ref(false)
   const isInvitingMember = ref(false)
+  const lastTextChannelByServer = ref({})
 
   const activeServerId = computed(() => activeServer.value?.id || null)
+
+  const loadLastTextChannelMap = () => {
+    if (typeof window === 'undefined') return
+
+    try {
+      const raw = window.localStorage.getItem('messing:lastTextChannelByServer')
+      lastTextChannelByServer.value = raw ? JSON.parse(raw) || {} : {}
+    } catch {
+      lastTextChannelByServer.value = {}
+    }
+  }
+
+  const saveLastTextChannelMap = () => {
+    if (typeof window === 'undefined') return
+
+    window.localStorage.setItem(
+      'messing:lastTextChannelByServer',
+      JSON.stringify(lastTextChannelByServer.value),
+    )
+  }
+
+  const setLastTextChannelForServer = (serverId, channelId) => {
+    if (!serverId || !channelId) return
+
+    lastTextChannelByServer.value = {
+      ...lastTextChannelByServer.value,
+      [serverId]: channelId,
+    }
+    saveLastTextChannelMap()
+  }
+
+  const getLastTextChannelForServer = (serverId) => {
+    if (!serverId) return null
+    return lastTextChannelByServer.value?.[serverId] || null
+  }
+
+  const getPreferredChannelId = (serverId, channelList = channels.value) => {
+    const preferredId = getLastTextChannelForServer(serverId)
+    const preferredChannel = channelList.find((channel) => channel.id === preferredId && channel.type !== 'VOICE')
+    if (preferredChannel) return preferredChannel.id
+
+    const firstTextChannel = channelList.find((channel) => channel.type !== 'VOICE')
+    if (firstTextChannel) return firstTextChannel.id
+
+    return channelList[0]?.id || null
+  }
 
   const fetchServers = async () => {
     try {
@@ -23,6 +70,8 @@ export const useServerStore = defineStore('server', () => {
       if (!activeServer.value && servers.value.length > 0) {
         activeServer.value = servers.value[0]
       }
+
+      loadLastTextChannelMap()
 
       return servers.value
     } finally {
@@ -189,6 +238,9 @@ export const useServerStore = defineStore('server', () => {
 
       if (created) {
         channels.value.push(created)
+        if (created.type !== 'VOICE') {
+          setLastTextChannelForServer(serverId, created.id)
+        }
       }
 
       return created
@@ -229,6 +281,14 @@ export const useServerStore = defineStore('server', () => {
       await api.delete(`/api/servers/${serverId}/channels/${channelId}`)
 
       channels.value = channels.value.filter((channel) => channel.id !== channelId)
+
+      if (getLastTextChannelForServer(serverId) === channelId) {
+        const nextPreferred = getPreferredChannelId(serverId, channels.value)
+        if (nextPreferred) {
+          setLastTextChannelForServer(serverId, nextPreferred)
+        }
+      }
+
       return true
     } finally {
       isCreatingChannel.value = false

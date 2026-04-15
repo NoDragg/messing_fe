@@ -1,8 +1,7 @@
 <script setup>
-import { Hash, LogOut, Pencil, Trash2, Settings, UserPlus, Play, Square, Volume2, PlusCircle } from 'lucide-vue-next'
+import { LogOut, Pencil, Trash2, Settings, UserPlus, Volume2, PlusCircle } from 'lucide-vue-next'
 
 import { useServerStore } from '@/stores/serverStore'
-import { useChatStore } from '@/stores/chatStore'
 import { useToast } from '@/composables/useToast'
 
 defineProps({
@@ -35,7 +34,6 @@ defineProps({
 const emit = defineEmits(['select-channel', 'rename-channel', 'delete-channel', 'edit-server', 'delete-server', 'open-settings', 'create-channel', 'logout'])
 
 const serverStore = useServerStore()
-const chatStore = useChatStore()
 const { showToast } = useToast()
 
 const handleInviteUser = async () => {
@@ -70,17 +68,6 @@ const handleInviteUser = async () => {
     <header class="channel-sidebar__header">
       <h2 class="channel-sidebar__server-name">{{ serverName }}</h2>
       <div class="channel-sidebar__actions">
-        <button
-          type="button"
-          class="channel-sidebar__icon-button"
-          :class="{'channel-sidebar__icon-button--active': chatStore.isDemoing}"
-          :title="chatStore.isDemoing ? 'Dừng Demo Traffic' : 'Chạy Demo Traffic'"
-          @click="chatStore.toggleDemoTraffic"
-        >
-          <Square v-if="chatStore.isDemoing" :size="16" />
-          <Play v-else :size="16" />
-        </button>
-
         <button
           type="button"
           class="channel-sidebar__icon-button"

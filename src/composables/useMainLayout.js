@@ -97,11 +97,11 @@ export const useMainLayout = () => {
     }
   }
 
-  const selectFirstChannel = async (channelList) => {
-    const firstChannelId = getChannelId(channelList?.[0])
+  const selectPreferredChannel = async (serverId, channelList) => {
+    const preferredId = serverStore.getPreferredChannelId(serverId, channelList)
 
-    if (firstChannelId) {
-      await handleSelectChannel(firstChannelId)
+    if (preferredId) {
+      await handleSelectChannel(preferredId)
       return
     }
 
@@ -114,7 +114,7 @@ export const useMainLayout = () => {
 
     serverStore.setActiveServer(server)
     const nextChannels = await serverStore.fetchChannelsByServer(serverId)
-    await selectFirstChannel(nextChannels)
+    await selectPreferredChannel(serverId, nextChannels)
   }
 
   const openCreateServerModal = () => {
@@ -174,7 +174,7 @@ export const useMainLayout = () => {
     if (!created?.id) return
 
     const nextChannels = await serverStore.fetchChannelsByServer(created.id)
-    await selectFirstChannel(nextChannels)
+    await selectPreferredChannel(created.id, nextChannels)
   }
 
   const handleChannelCreated = async (created) => {
@@ -187,8 +187,9 @@ export const useMainLayout = () => {
   const handleChannelDeleted = async (channelIdToDelete) => {
     if (chatStore.currentChannelId !== channelIdToDelete) return
 
-    if (channels.value.length > 0) {
-      await handleSelectChannel(channels.value[0].id)
+    const nextPreferred = serverStore.getPreferredChannelId(serverStore.activeServerId, channels.value)
+    if (nextPreferred) {
+      await handleSelectChannel(nextPreferred)
       return
     }
 
@@ -279,7 +280,7 @@ export const useMainLayout = () => {
 
     if (serverStore.activeServerId) {
       const nextChannels = await serverStore.fetchChannelsByServer(serverStore.activeServerId)
-      await selectFirstChannel(nextChannels)
+      await selectPreferredChannel(serverStore.activeServerId, nextChannels)
     }
   })
 
