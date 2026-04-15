@@ -5,14 +5,21 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import { useAuthStore } from '@/stores/authStore'
+import { initApiClient } from '@/services/api'
 
-const app = createApp(App)
-const pinia = createPinia()
+const bootstrap = async () => {
+  await initApiClient()
 
-app.use(pinia)
+  const app = createApp(App)
+  const pinia = createPinia()
 
-const authStore = useAuthStore(pinia)
-authStore.initAuth()
+  app.use(pinia)
 
-app.use(router)
-app.mount('#app')
+  const authStore = useAuthStore(pinia)
+  authStore.initAuth()
+
+  app.use(router)
+  app.mount('#app')
+}
+
+bootstrap()
