@@ -342,6 +342,8 @@ export const useServerStore = defineStore('server', () => {
     acceptInvite,
     setActiveServer,
     fetchChannelsByServer,
+    getPreferredChannelId,
+    setLastTextChannelForServer,
     reset,
   }
 })

@@ -91,6 +91,10 @@ export const useMainLayout = () => {
     if (chatStore.isConnected) {
       chatStore.subscribeToChannel(channelId)
     }
+
+    if (serverStore.activeServerId) {
+      serverStore.setLastTextChannelForServer(serverStore.activeServerId, channelId)
+    }
   }
 
   const selectPreferredChannel = async (serverId, channelList) => {
