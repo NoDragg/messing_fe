@@ -1,6 +1,6 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
-import { Mic, MicOff, Headphones, PhoneOff } from 'lucide-vue-next'
+import { computed } from 'vue'
+import { Mic, MicOff, Headphones, PhoneOff, Volume2, AudioLines } from 'lucide-vue-next'
 
 const props = defineProps({
   channel: {
@@ -15,21 +15,9 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
-  remoteStreams: {
-    type: Object,
-    default: () => ({}),
-  },
-  speakingUserIds: {
-    type: Object,
-    default: () => new Set(),
-  },
-  sessionId: {
+  activeSpeakerId: {
     type: String,
     default: null,
-  },
-  isSessionStarter: {
-    type: Boolean,
-    default: false,
   },
   muted: {
     type: Boolean,
@@ -43,31 +31,8 @@ const props = defineProps({
 
 const emit = defineEmits(['toggle-mute', 'toggle-deafen', 'leave'])
 
-const audioRefs = ref({})
-
-const ensureAudioPlayback = () => {
-  Object.entries(props.remoteStreams || {}).forEach(([userId, stream]) => {
-    const audioEl = audioRefs.value[userId]
-    if (!audioEl || !stream) return
-
-    if (audioEl.srcObject !== stream) {
-      audioEl.srcObject = stream
-    }
-
-    audioEl.muted = false
-    audioEl.play?.().catch(() => {
-      // browser autoplay policy may block until user interaction
-    })
-  })
-}
-
-watch(
-  () => props.remoteStreams,
-  () => ensureAudioPlayback(),
-  { deep: true },
-)
-
 const participantItems = computed(() => props.participants || [])
+const participantCount = computed(() => participantItems.value.length)
 
 const initial = (name) => (name || 'U').charAt(0).toUpperCase()
 </script>
@@ -76,19 +41,16 @@ const initial = (name) => (name || 'U').charAt(0).toUpperCase()
   <section class="voice-panel">
     <header class="voice-panel__header">
       <div>
-        <h2 class="voice-panel__title">🔊 {{ channel?.name || 'Voice Channel' }}</h2>
-        <p class="voice-panel__subtitle">{{ participantItems.length }} người đang tham gia</p>
+        <h2 class="voice-panel__title">
+          <Volume2 :size="16" />
+          {{ channel?.name || 'Voice Channel' }}
+        </h2>
+        <p class="voice-panel__subtitle">{{ participantCount }} người đang tham gia</p>
       </div>
-      <div class="voice-panel__session-info">
-        <p class="voice-panel__session-text">
-          Session: {{ sessionId ? sessionId.slice(0, 8) : '---' }}
-        </p>
-        <span
-          v-if="isSessionStarter"
-          class="voice-panel__starter-badge"
-        >
-          Bạn là người bắt đầu session
-        </span>
+
+      <div class="voice-panel__presence">
+        <span class="voice-panel__live-indicator" />
+        LiveKit
       </div>
     </header>
 
@@ -97,32 +59,33 @@ const initial = (name) => (name || 'U').charAt(0).toUpperCase()
         v-for="user in participantItems"
         :key="user.id"
         class="voice-panel__card"
-        :class="{ 'voice-panel__card--speaking': speakingUserIds.has(user.id) }"
+        :class="{
+          'voice-panel__card--speaking': user.id === activeSpeakerId || user.speaking,
+          'voice-panel__card--self': currentUser?.id === user.id,
+        }"
       >
-        <img
-          v-if="user.avatarUrl"
-          :src="user.avatarUrl"
-          alt="Avatar"
-          class="voice-panel__avatar-image"
-        />
-        <div v-else class="voice-panel__avatar-fallback">
-          {{ initial(user.username) }}
+        <div class="voice-panel__avatar" :class="{ 'voice-panel__avatar--local': user.isLocal }">
+          <img
+            v-if="user.avatarUrl"
+            :src="user.avatarUrl"
+            :alt="user.name || user.username || 'Avatar'"
+            class="voice-panel__avatar-image"
+          />
+          <div v-else class="voice-panel__avatar-fallback">
+            {{ initial(user.name || user.username) }}
+          </div>
         </div>
 
-        <p class="voice-panel__username">
-          {{ user.username }}
-          <span
-            v-if="currentUser?.id === user.id"
-            class="voice-panel__you"
-          >(Bạn)</span>
-        </p>
-
-        <audio
-          v-if="remoteStreams[user.id]"
-          :ref="(el) => { if (el) audioRefs[user.id] = el }"
-          autoplay
-          playsinline
-        />
+        <div class="voice-panel__meta">
+          <p class="voice-panel__username">
+            {{ user.name || user.username || 'Unknown' }}
+            <span v-if="currentUser?.id === user.id" class="voice-panel__you">(Bạn)</span>
+          </p>
+          <p class="voice-panel__status">
+            <AudioLines v-if="user.id === activeSpeakerId || user.speaking" :size="12" />
+            <span>{{ user.id === activeSpeakerId || user.speaking ? 'Đang nói' : user.isLocal ? 'Bạn' : 'Đang online' }}</span>
+          </p>
+        </div>
       </article>
     </div>
 
@@ -165,55 +128,58 @@ const initial = (name) => (name || 'U').charAt(0).toUpperCase()
   display: flex;
   flex: 1;
   flex-direction: column;
-  background-color: #374151;
+  background-color: #111827;
 }
 
 .voice-panel__header {
   display: flex;
-  height: 56px;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #4b5563;
-  padding: 0 16px;
+  border-bottom: 1px solid #1f2937;
+  padding: 16px;
 }
 
 .voice-panel__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
   font-size: 15px;
-  font-weight: 600;
-  color: #fff;
+  font-weight: 700;
+  color: #f9fafb;
 }
 
 .voice-panel__subtitle {
+  margin: 4px 0 0;
   font-size: 13px;
-  color: #d1d5db;
-}
-
-.voice-panel__session-info {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-}
-
-.voice-panel__session-text {
-  margin: 0;
-  font-size: 12px;
   color: #9ca3af;
 }
 
-.voice-panel__starter-badge {
+.voice-panel__presence {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   border-radius: 9999px;
-  background-color: rgba(34, 197, 94, 0.18);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  background: rgba(34, 197, 94, 0.08);
+  padding: 6px 10px;
   color: #86efac;
-  padding: 2px 8px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
+}
+
+.voice-panel__live-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: #22c55e;
+  box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.12);
 }
 
 .voice-panel__grid {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 12px;
   padding: 16px;
   overflow-y: auto;
@@ -221,25 +187,45 @@ const initial = (name) => (name || 'U').charAt(0).toUpperCase()
 
 .voice-panel__card {
   display: flex;
-  flex-direction: column;
+  gap: 12px;
   align-items: center;
-  gap: 8px;
-  border-radius: 12px;
-  background-color: #1f2937;
-  padding: 14px 10px;
-  border: 1px solid transparent;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 16px;
+  border: 1px solid #1f2937;
+  background: #0f172a;
+  padding: 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .voice-panel__card--speaking {
-  border-color: #22c55e;
-  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+  border-color: rgba(34, 197, 94, 0.7);
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.18), 0 10px 24px rgba(0, 0, 0, 0.18);
+}
+
+.voice-panel__card--self {
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.16), rgba(15, 23, 42, 1));
+}
+
+.voice-panel__avatar {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.voice-panel__avatar--local::after {
+  content: '';
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  border: 2px solid #0f172a;
+  background: #22c55e;
 }
 
 .voice-panel__avatar-image,
 .voice-panel__avatar-fallback {
-  width: 56px;
-  height: 56px;
+  width: 52px;
+  height: 52px;
   border-radius: 9999px;
 }
 
@@ -251,27 +237,43 @@ const initial = (name) => (name || 'U').charAt(0).toUpperCase()
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #6366f1;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
   font-size: 20px;
-  font-weight: 700;
-  color: #fff;
+  font-weight: 800;
+}
+
+.voice-panel__meta {
+  min-width: 0;
 }
 
 .voice-panel__username {
-  color: #f3f4f6;
-  font-size: 13px;
+  margin: 0;
+  color: #f9fafb;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .voice-panel__you {
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.voice-panel__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 0;
+  font-size: 12px;
   color: #9ca3af;
 }
 
 .voice-panel__controls {
   display: flex;
   gap: 10px;
-  border-top: 1px solid #4b5563;
+  border-top: 1px solid #1f2937;
   padding: 12px 16px;
-  background-color: #1f2937;
+  background-color: #0b1220;
 }
 
 .voice-panel__control-btn {
@@ -279,22 +281,22 @@ const initial = (name) => (name || 'U').charAt(0).toUpperCase()
   align-items: center;
   gap: 6px;
   border: none;
-  border-radius: 8px;
-  background-color: #374151;
+  border-radius: 10px;
+  background-color: #1f2937;
   color: #f3f4f6;
   padding: 8px 12px;
   cursor: pointer;
 }
 
 .voice-panel__control-btn:hover {
-  background-color: #4b5563;
+  background-color: #374151;
 }
 
 .voice-panel__control-btn--danger {
-  background-color: #7f1d1d;
+  background-color: rgba(185, 28, 28, 0.92);
 }
 
 .voice-panel__control-btn--danger:hover {
-  background-color: #991b1b;
+  background-color: #dc2626;
 }
 </style>

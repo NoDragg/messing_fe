@@ -12,6 +12,7 @@ export const useChatStore = defineStore('chat', () => {
   const activeSubscription = ref(null)
   const callSignalSubscription = ref(null)
   const latestCallSignal = ref(null)
+  const latestVoiceState = ref(null)
   const isConnected = ref(false)
   const isLoading = ref(false)
   const error = ref('')
@@ -170,6 +171,71 @@ export const useChatStore = defineStore('chat', () => {
     return data
   }
 
+  const subscribeToVoiceState = (channelId) => {
+    if (!stompClient.value || !isConnected.value || !channelId) {
+      return
+    }
+
+    latestVoiceState.value = null
+
+    if (callSignalSubscription.value) {
+      callSignalSubscription.value.unsubscribe()
+      callSignalSubscription.value = null
+    }
+
+    callSignalSubscription.value = stompClient.value.subscribe(
+      `/topic/voice/${channelId}`,
+      (payload) => {
+        latestVoiceState.value = JSON.parse(payload.body)
+      },
+    )
+  }
+
+  const getVoiceState = async (channelId) => {
+    if (!channelId) return null
+
+    const { data } = await api.get(`/api/voice/state/${channelId}`)
+    latestVoiceState.value = data
+    return data
+  }
+
+  const joinVoiceChannel = async (channelId, wantMic = true) => {
+    if (!channelId) return null
+
+    const { data } = await api.post('/api/voice/join', {
+      channelId,
+      wantMic,
+    })
+
+    latestVoiceState.value = data?.channelState || null
+    return data
+  }
+
+  const leaveVoiceChannel = async (channelId, sessionId) => {
+    if (!channelId || !sessionId) return null
+
+    const { data } = await api.post('/api/voice/leave', {
+      channelId,
+      sessionId,
+    })
+
+    latestVoiceState.value = data || null
+    return data
+  }
+
+  const toggleVoiceMic = async (channelId, sessionId, enabled) => {
+    if (!channelId || !sessionId) return null
+
+    const { data } = await api.post('/api/voice/mic', {
+      channelId,
+      sessionId,
+      enabled,
+    })
+
+    latestVoiceState.value = data || null
+    return data
+  }
+
   const disconnectWebSocket = () => {
     unsubscribeFromChannel()
 
@@ -201,6 +267,7 @@ export const useChatStore = defineStore('chat', () => {
     activeSubscription,
     callSignalSubscription,
     latestCallSignal,
+    latestVoiceState,
     isConnected,
     isLoading,
     error,
@@ -209,6 +276,11 @@ export const useChatStore = defineStore('chat', () => {
     subscribeToChannel,
     unsubscribeFromChannel,
     subscribeToCallSignals,
+    subscribeToVoiceState,
+    getVoiceState,
+    joinVoiceChannel,
+    leaveVoiceChannel,
+    toggleVoiceMic,
     sendMessage,
     sendCallSignal,
     sendImage,

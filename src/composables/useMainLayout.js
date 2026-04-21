@@ -35,19 +35,15 @@ export const useMainLayout = () => {
     return matched?.name || 'general'
   })
   const isCurrentChannelVoice = computed(() => selectedChannel.value?.type === 'VOICE')
-  const activeVoiceChannel = computed(() => channels.value.find((c) => c.id === voiceStore.activeVoiceChannelId) || null)
   const messages = computed(() => chatStore.messages)
 
-  // Voice channel computed
   const activeVoiceChannelName = computed(() => {
     const id = voiceStore.activeVoiceChannelId
     if (!id) return ''
     const ch = channels.value.find((c) => c.id === id)
     return ch?.name || 'Voice Channel'
   })
-  const voiceParticipantCount = computed(() =>
-    voiceStore.getParticipantCount(voiceStore.activeVoiceChannelId)
-  )
+  const voiceParticipantCount = computed(() => voiceStore.voiceParticipantCount)
 
   const getChannelId = (channel) => channel?.id ?? channel?.channelId ?? null
 
@@ -63,9 +59,9 @@ export const useMainLayout = () => {
     return true
   }
 
-  const clearCurrentChannel = () => {
+  const clearCurrentChannel = async () => {
     if (voiceStore.activeVoiceChannelId) {
-      voiceStore.leaveVoiceChannel()
+      await voiceStore.leaveVoiceChannel()
     }
     chatStore.unsubscribeFromChannel()
     chatStore.currentChannelId = null
@@ -105,7 +101,7 @@ export const useMainLayout = () => {
       return
     }
 
-    clearCurrentChannel()
+    await clearCurrentChannel()
   }
 
   const handleSelectServer = async (serverId) => {
@@ -207,7 +203,13 @@ export const useMainLayout = () => {
     }
 
     const nextChannels = await serverStore.fetchChannelsByServer(serverStore.activeServerId)
-    await selectFirstChannel(nextChannels)
+    const firstChannel = nextChannels?.[0]
+    if (firstChannel?.id) {
+      await handleSelectChannel(firstChannel.id)
+      return
+    }
+
+    clearCurrentChannel()
   }
 
   const handleSendMessage = (content) => {
@@ -289,32 +291,15 @@ export const useMainLayout = () => {
     async (connected) => {
       if (!connected) return
 
-      const currentUserId = authStore.user?.id
-      if (currentUserId) {
-        chatStore.subscribeToCallSignals(currentUserId)
-      }
-
       if (chatStore.currentChannelId && !isCurrentChannelVoice.value) {
         chatStore.subscribeToChannel(chatStore.currentChannelId)
       }
 
       if (voiceStore.activeVoiceChannelId) {
-        const rejoined = await voiceStore.rejoinActiveVoiceChannel()
-        if (!rejoined) {
+        const reloaded = await voiceStore.syncVoiceState(voiceStore.activeVoiceChannelId)
+        if (!reloaded) {
           showToast('Không thể khôi phục voice channel sau khi reconnect.', 'warning')
         }
-      }
-    },
-  )
-
-  watch(
-    () => chatStore.latestCallSignal,
-    async (signal) => {
-      if (!signal) return
-
-      const voiceHandled = await voiceStore.handleVoiceSignal(signal)
-      if (voiceHandled?.kind === 'error') {
-        showToast(voiceHandled.message || 'Lỗi voice channel', 'error')
       }
     },
   )
