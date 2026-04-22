@@ -152,8 +152,15 @@ const {
   height: 100vh;
   width: 100vw;
   overflow: hidden;
-  background-color: rgb(17 24 39);
-  color: rgb(243 244 246);
   position: relative;
+  color: rgb(243 244 246);
+  background:
+    radial-gradient(circle at top, rgba(124, 140, 255, 0.08), transparent 22%),
+    linear-gradient(180deg, rgba(9, 13, 24, 0.98), rgba(5, 8, 22, 0.98));
+  animation: ui-fade-in 280ms ease;
+}
+
+.main-layout > * {
+  animation: ui-fade-up 280ms ease both;
 }
 </style>

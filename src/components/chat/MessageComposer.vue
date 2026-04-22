@@ -65,14 +65,16 @@ const handleFileSelected = (event) => {
 
 <style scoped>
 .message-composer {
-  border-top: 1px solid #4b5563;
-  padding: 16px;
+  border-top: 1px solid rgba(148, 163, 184, 0.09);
+  padding: 16px 18px 18px;
+  background: rgba(9, 12, 20, 0.34);
+  backdrop-filter: blur(16px);
 }
 
 .message-composer__form {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .message-composer__icon-button {
@@ -80,15 +82,23 @@ const handleFileSelected = (event) => {
   align-items: center;
   justify-content: center;
   border: none;
-  background: transparent;
-  padding: 4px;
-  color: #cbd5e1;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 10px;
+  color: #c8d1e7;
   cursor: pointer;
-  transition: color 0.2s ease;
+  transition:
+    transform var(--transition-fast),
+    background-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
 
 .message-composer__icon-button:hover {
   color: #ffffff;
+  background: rgba(124, 140, 255, 0.12);
+  transform: translateY(-1px);
 }
 
 .message-composer__file-input {
@@ -97,20 +107,27 @@ const handleFileSelected = (event) => {
 
 .message-composer__input {
   width: 100%;
-  border: none;
-  border-radius: 8px;
-  background-color: #4b5563;
-  padding: 8px 16px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 14px;
+  background: rgba(18, 24, 40, 0.95);
+  padding: 13px 16px;
   color: #ffffff;
   font-size: 14px;
   box-sizing: border-box;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background-color var(--transition-fast);
 }
 
 .message-composer__input::placeholder {
-  color: #d1d5db;
+  color: #98a6c4;
 }
 
 .message-composer__input:focus {
   outline: none;
+  border-color: rgba(124, 140, 255, 0.45);
+  box-shadow: 0 0 0 4px rgba(124, 140, 255, 0.12);
+  background: rgba(20, 26, 43, 0.98);
 }
 </style>

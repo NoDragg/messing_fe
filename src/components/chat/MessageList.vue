@@ -118,45 +118,64 @@ const getMessageAvatarUrl = (message) => {
 
 <template>
   <div ref="messageListRef" class="message-list">
-    <div v-if="loading" class="message-list__loading">Đang tải tin nhắn...</div>
-
-    <article
-      v-for="message in messages"
-      :key="message.id"
-      class="message-list__item"
-    >
-      <img
-        v-if="getMessageAvatarUrl(message)"
-        :src="getMessageAvatarUrl(message)"
-        alt="Avatar"
-        class="message-list__avatar-image"
-      />
-      <div v-else class="message-list__avatar">
-        {{ getMessageUsername(message).charAt(0).toUpperCase() }}
-      </div>
-
-      <div>
-        <div class="message-list__meta">
-          <p class="message-list__sender">{{ getMessageUsername(message) }}</p>
-          <span class="message-list__time">{{ formatTime(message.createdAt) }}</span>
+    <div v-if="loading" class="message-list__skeleton-list" aria-busy="true" aria-live="polite">
+      <div
+        v-for="index in 6"
+        :key="index"
+        class="message-list__skeleton-item"
+        :style="{ animationDelay: `${index * 90}ms` }"
+      >
+        <div class="message-list__skeleton-avatar"></div>
+        <div class="message-list__skeleton-body">
+          <div class="message-list__skeleton-headline">
+            <span class="message-list__skeleton-line message-list__skeleton-line--name"></span>
+            <span class="message-list__skeleton-line message-list__skeleton-line--time"></span>
+          </div>
+          <span class="message-list__skeleton-line message-list__skeleton-line--text"></span>
+          <span class="message-list__skeleton-line message-list__skeleton-line--text message-list__skeleton-line--short"></span>
         </div>
-        <p
-          v-if="getTextContent(message)"
-          class="message-list__content"
-          v-html="formatTextContent(getTextContent(message))"
-        ></p>
-        <img
-          v-if="getImageUrl(message)"
-          :src="getImageUrl(message)"
-          alt="chat image"
-          class="message-list__image"
-        />
       </div>
-    </article>
-
-    <div v-if="!loading && messages.length === 0" class="message-list__empty">
-      Chưa có tin nhắn nào trong #{{ channelName }}
     </div>
+
+    <template v-else>
+      <article
+        v-for="message in messages"
+        :key="message.id"
+        class="message-list__item"
+      >
+        <img
+          v-if="getMessageAvatarUrl(message)"
+          :src="getMessageAvatarUrl(message)"
+          alt="Avatar"
+          class="message-list__avatar-image"
+        />
+        <div v-else class="message-list__avatar">
+          {{ getMessageUsername(message).charAt(0).toUpperCase() }}
+        </div>
+
+        <div>
+          <div class="message-list__meta">
+            <p class="message-list__sender">{{ getMessageUsername(message) }}</p>
+            <span class="message-list__time">{{ formatTime(message.createdAt) }}</span>
+          </div>
+          <p
+            v-if="getTextContent(message)"
+            class="message-list__content"
+            v-html="formatTextContent(getTextContent(message))"
+          ></p>
+          <img
+            v-if="getImageUrl(message)"
+            :src="getImageUrl(message)"
+            alt="chat image"
+            class="message-list__image"
+          />
+        </div>
+      </article>
+
+      <div v-if="messages.length === 0" class="message-list__empty">
+        Chưa có tin nhắn nào trong #{{ channelName }}
+      </div>
+    </template>
   </div>
 </template>
 
@@ -164,9 +183,9 @@ const getMessageAvatarUrl = (message) => {
 .message-list {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: 18px 18px 20px;
   scrollbar-width: thin;
-  scrollbar-color: #4b5563 transparent;
+  scrollbar-color: rgba(124, 140, 255, 0.32) transparent;
 }
 
 .message-list::-webkit-scrollbar {
@@ -178,48 +197,138 @@ const getMessageAvatarUrl = (message) => {
 }
 
 .message-list::-webkit-scrollbar-thumb {
-  background-color: #4b5563;
-  border-radius: 4px;
+  background: linear-gradient(180deg, rgba(124, 140, 255, 0.44), rgba(86, 104, 255, 0.22));
+  border-radius: 999px;
 }
 
 .message-list::-webkit-scrollbar-thumb:hover {
-  background-color: #6b7280;
+  background: linear-gradient(180deg, rgba(124, 140, 255, 0.7), rgba(86, 104, 255, 0.42));
 }
 
 .message-list > * + * {
   margin-top: 16px;
 }
 
-.message-list__loading,
 .message-list__empty {
   font-size: 14px;
-  color: #d1d5db;
+  color: #c8d1e7;
+  animation: ui-fade-up 220ms ease;
+}
+
+.message-list__skeleton-list {
+  display: grid;
+  gap: 14px;
+  animation: ui-fade-up 180ms ease;
+}
+
+.message-list__skeleton-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 12px 13px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+  position: relative;
+  overflow: hidden;
+}
+
+.message-list__skeleton-item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+.message-list__skeleton-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(124, 140, 255, 0.14), rgba(86, 104, 255, 0.08));
+  flex-shrink: 0;
+}
+
+.message-list__skeleton-body {
+  flex: 1;
+  display: grid;
+  gap: 9px;
+  padding-top: 1px;
+}
+
+.message-list__skeleton-headline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.message-list__skeleton-line {
+  display: block;
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(124, 140, 255, 0.14), rgba(86, 104, 255, 0.08));
+}
+
+.message-list__skeleton-line--name {
+  width: 110px;
+  height: 12px;
+}
+
+.message-list__skeleton-line--time {
+  width: 56px;
+  height: 8px;
+  opacity: 0.8;
+}
+
+.message-list__skeleton-line--text {
+  width: 100%;
+  max-width: 520px;
+}
+
+.message-list__skeleton-line--short {
+  width: 72%;
 }
 
 .message-list__item {
   display: flex;
   align-items: flex-start;
   gap: 12px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  transition:
+    background-color var(--transition-fast),
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+  animation: message-enter 260ms ease;
+}
+
+.message-list__item:hover {
+  background: rgba(255, 255, 255, 0.02);
+  transform: translateY(-1px);
+  box-shadow: inset 0 0 0 1px rgba(129, 140, 248, 0.08);
 }
 
 .message-list__avatar {
   display: flex;
-  height: 36px;
-  width: 36px;
+  height: 38px;
+  width: 38px;
   align-items: center;
   justify-content: center;
-  border-radius: 9999px;
-  background-color: #6366f1;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(124, 140, 255, 0.36), rgba(86, 104, 255, 0.22));
   color: #ffffff;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 .message-list__avatar-image {
-  height: 36px;
-  width: 36px;
-  border-radius: 9999px;
+  height: 38px;
+  width: 38px;
+  border-radius: 14px;
   object-fit: cover;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
 .message-list__meta {
@@ -231,37 +340,56 @@ const getMessageAvatarUrl = (message) => {
 .message-list__sender {
   margin: 0;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   color: #ffffff;
 }
 
 .message-list__time {
   font-size: 12px;
-  color: #d1d5db;
+  color: #9ba8c5;
 }
 
 .message-list__content {
-  margin: 2px 0 0;
+  margin: 3px 0 0;
   font-size: 14px;
-  color: #f3f4f6;
+  line-height: 1.55;
+  color: #eef2ff;
 }
 
 .message-list__image {
-  margin-top: 6px;
-  max-width: 320px;
-  max-height: 320px;
-  border-radius: 8px;
+  margin-top: 8px;
+  max-width: min(420px, 100%);
+  max-height: 340px;
+  border-radius: 14px;
   object-fit: cover;
-  border: 1px solid #4b5563;
+  border: 1px solid rgba(129, 140, 248, 0.18);
+  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.25);
 }
 
 .message-list__content :deep(.message-list__text-link) {
-  color: #60a5fa;
+  color: #8eb4ff;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
 .message-list__content :deep(.message-list__text-link:hover) {
-  color: #93c5fd;
+  color: #b8d0ff;
+}
+
+@keyframes message-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
 }
 </style>

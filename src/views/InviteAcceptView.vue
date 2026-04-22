@@ -64,21 +64,20 @@ onMounted(async () => {
 <style scoped>
 .invite-view {
   display: flex;
-  height: 100vh;
-  width: 100vw;
+  min-height: 100svh;
+  width: 100%;
   align-items: center;
   justify-content: center;
   background-color: #111827;
-  padding: 0 16px;
+  padding: 24px 16px;
   color: #f3f4f6;
   box-sizing: border-box;
 }
 
 .invite-view__card {
-  width: 100%;
-  max-width: 448px;
+  width: min(448px, 100%);
   border: 1px solid #374151;
-  border-radius: 12px;
+  border-radius: 18px;
   background-color: #1f2937;
   padding: 24px;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
@@ -118,17 +117,36 @@ onMounted(async () => {
 }
 
 .invite-view__home-link {
-  border-radius: 6px;
+  border-radius: 10px;
   background-color: #4f46e5;
-  padding: 8px 16px;
+  padding: 10px 16px;
   color: #ffffff;
   font-size: 14px;
   font-weight: 600;
   text-decoration: none;
   transition: background-color 0.2s ease;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .invite-view__home-link:hover {
   background-color: #6366f1;
+}
+
+@media (max-width: 640px) {
+  .invite-view {
+    align-items: flex-start;
+    padding: 16px 12px 24px;
+  }
+
+  .invite-view__card {
+    padding: 20px 18px;
+    border-radius: 18px;
+  }
+
+  .invite-view__title {
+    font-size: 18px;
+  }
 }
 </style>

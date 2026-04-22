@@ -100,30 +100,43 @@ const emit = defineEmits(['send-message', 'send-image', 'voice-mute', 'voice-dea
   display: flex;
   flex: 1;
   flex-direction: column;
-  background-color: #374151;
+  background: linear-gradient(180deg, rgba(17, 23, 38, 0.8), rgba(12, 16, 28, 0.94));
+  position: relative;
+  animation: chat-window-entrance 420ms cubic-bezier(.2,.8,.2,1);
+}
+
+.chat-window::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 20% 0%, rgba(124, 140, 255, 0.08), transparent 30%);
 }
 
 .chat-window__header {
   display: flex;
-  height: 56px;
+  height: 60px;
   align-items: center;
-  border-bottom: 1px solid #4b5563;
-  padding: 0 16px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.09);
+  padding: 0 18px;
   gap: 12px;
+  background: rgba(9, 12, 20, 0.38);
+  backdrop-filter: blur(16px);
 }
 
 .chat-window__title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #ffffff;
   flex: 1;
+  font-size: 14px;
+  font-weight: 700;
+  color: #f5f7ff;
+  letter-spacing: 0.01em;
 }
 
-/* Voice Controls */
 .chat-window__voice-controls {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  animation: ui-fade-up 260ms ease;
 }
 
 .chat-window__voice-label {
@@ -131,51 +144,69 @@ const emit = defineEmits(['send-message', 'send-image', 'voice-mute', 'voice-dea
   align-items: center;
   gap: 5px;
   font-size: 12px;
-  color: #4ade80;
-  font-weight: 600;
-  padding: 0 8px;
-  border-right: 1px solid #4b5563;
+  color: #7ef0c6;
+  font-weight: 700;
+  padding: 0 10px 0 0;
+  border-right: 1px solid rgba(148, 163, 184, 0.14);
   margin-right: 2px;
 }
 
 .chat-window__voice-btn {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   border: none;
-  border-radius: 6px;
-  background-color: transparent;
-  color: #9ca3af;
-  padding: 6px 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  color: #b2bdd6;
+  padding: 8px 10px;
   cursor: pointer;
   font-size: 12px;
-  font-weight: 500;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  font-weight: 600;
+  transition:
+    transform var(--transition-fast),
+    background-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
 
 .chat-window__voice-btn:hover {
-  background-color: #4b5563;
+  background: rgba(124, 140, 255, 0.12);
   color: #ffffff;
+  transform: translateY(-1px);
 }
 
 .chat-window__voice-btn--active {
-  color: #f87171;
-  background-color: rgba(248, 113, 113, 0.12);
+  color: #ffb3c0;
+  background: rgba(248, 113, 113, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(248, 113, 113, 0.16);
 }
 
 .chat-window__voice-btn--active:hover {
-  background-color: rgba(248, 113, 113, 0.22);
-  color: #fca5a5;
+  background: rgba(248, 113, 113, 0.22);
+  color: #ffd5dd;
 }
 
 .chat-window__voice-btn--leave {
-  color: #f87171;
-  background-color: rgba(248, 113, 113, 0.1);
-  padding: 6px 10px;
+  color: #ffb3c0;
+  background: rgba(248, 113, 113, 0.1);
+  padding: 8px 12px;
 }
 
 .chat-window__voice-btn--leave:hover {
-  background-color: #dc2626;
+  background: rgba(220, 38, 38, 0.92);
   color: #ffffff;
+}
+
+@keyframes chat-window-entrance {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

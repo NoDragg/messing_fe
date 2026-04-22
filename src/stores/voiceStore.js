@@ -15,6 +15,7 @@ import { useAuthStore } from '@/stores/authStore'
 
 export const useVoiceStore = defineStore('voice', () => {
     const activeVoiceChannelId = ref(null)
+    const activeVoiceChannelName = ref('')
     const activeSessionId = ref(null)
     const room = ref(null)
     const participants = ref([])
@@ -183,7 +184,7 @@ export const useVoiceStore = defineStore('voice', () => {
         })
     }
 
-    const joinVoiceChannel = async (channelId, wantMic = true) => {
+    const joinVoiceChannel = async (channelId, channelName = '', wantMic = true) => {
         if (!channelId) return null
 
         if (activeVoiceChannelId.value && activeVoiceChannelId.value !== channelId) {
@@ -206,6 +207,7 @@ export const useVoiceStore = defineStore('voice', () => {
         await lkRoom.connect(data.livekitUrl, data.livekitToken)
 
         activeVoiceChannelId.value = channelId
+        activeVoiceChannelName.value = channelName || ''
         activeSessionId.value = data.sessionId
         latestChannelState.value = data.channelState || null
         room.value = lkRoom
@@ -301,6 +303,7 @@ export const useVoiceStore = defineStore('voice', () => {
         room.value = null
         participants.value = []
         activeVoiceChannelId.value = null
+        activeVoiceChannelName.value = ''
         activeSessionId.value = null
         muted.value = false
         deafened.value = false
@@ -314,6 +317,7 @@ export const useVoiceStore = defineStore('voice', () => {
 
     return {
         activeVoiceChannelId,
+        activeVoiceChannelName,
         activeSessionId,
         room,
         participants,

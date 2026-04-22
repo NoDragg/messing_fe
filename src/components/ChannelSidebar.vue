@@ -198,19 +198,22 @@ const handleInviteUser = async () => {
 <style scoped>
 .channel-sidebar {
   display: flex;
-  width: 240px;
+  width: 272px;
   flex-direction: column;
-  background-color: #1f2937;
+  background: linear-gradient(180deg, rgba(13, 17, 28, 0.96), rgba(11, 14, 24, 0.98));
+  border-right: 1px solid rgba(129, 140, 248, 0.12);
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.02);
 }
 
 .channel-sidebar__header {
   display: flex;
-  height: 56px;
+  height: 60px;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #374151;
-  padding: 0 12px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.09);
+  padding: 0 14px;
+  background: rgba(9, 12, 20, 0.4);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 
 .channel-sidebar__server-name {
@@ -219,8 +222,9 @@ const handleInviteUser = async () => {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 14px;
-  font-weight: 600;
-  color: #ffffff;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.01em;
 }
 
 .channel-sidebar__icon-button {
@@ -228,50 +232,57 @@ const handleInviteUser = async () => {
   align-items: center;
   justify-content: center;
   border: none;
+  border-radius: 10px;
   background: transparent;
-  padding: 4px;
-  color: #cbd5e1;
+  padding: 7px;
+  color: #b7c3e0;
   cursor: pointer;
-  transition: color 0.2s ease;
+  transition:
+    transform var(--transition-fast),
+    color var(--transition-fast),
+    background-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .channel-sidebar__icon-button:hover {
   color: #ffffff;
-}
-
-.channel-sidebar__icon-button--active {
-  color: #4ade80;
-}
-
-.channel-sidebar__icon-button--active:hover {
-  color: #22c55e;
+  background: rgba(124, 140, 255, 0.12);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
 }
 
 .channel-sidebar__icon-button--danger:hover {
-  color: #f87171;
+  color: #ffd0d8;
+  background: rgba(255, 107, 136, 0.14);
 }
 
 .channel-sidebar__channel-list {
   flex: 1;
   overflow-y: auto;
-  padding: 8px;
+  padding: 10px 8px 12px;
+  animation: channel-list-entrance 520ms cubic-bezier(.2,.8,.2,1);
 }
 
 .channel-sidebar__channel-row {
   margin-bottom: 4px;
   display: flex;
   align-items: center;
-  border-radius: 6px;
-  padding: 0 6px;
-  transition: background-color 0.2s ease;
+  border-radius: 14px;
+  padding: 0 10px;
+  transition:
+    transform var(--transition-fast),
+    background-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .channel-sidebar__channel-row:hover {
-  background-color: #374151;
+  background: rgba(30, 39, 58, 0.92);
+  transform: translateX(2px);
 }
 
 .channel-sidebar__channel-row--active {
-  background-color: #374151;
+  background: linear-gradient(90deg, rgba(124, 140, 255, 0.16), rgba(30, 39, 58, 0.94));
+  box-shadow: inset 0 0 0 1px rgba(129, 140, 248, 0.12);
 }
 
 .channel-sidebar__channel-item {
@@ -281,16 +292,17 @@ const handleInviteUser = async () => {
   align-items: center;
   border: none;
   background: transparent;
-  padding: 6px 2px;
+  padding: 10px 2px;
   text-align: left;
-  color: #d1d5db;
+  color: #b9c4dc;
   font-size: 14px;
   cursor: pointer;
+  transition: color var(--transition-fast);
 }
 
 .channel-sidebar__channel-row:hover .channel-sidebar__channel-item,
 .channel-sidebar__channel-row--active .channel-sidebar__channel-item {
-  color: #f3f4f6;
+  color: #f4f7ff;
 }
 
 .channel-sidebar__channel-rename-btn {
@@ -298,15 +310,21 @@ const handleInviteUser = async () => {
   align-items: center;
   justify-content: center;
   border: none;
+  border-radius: 10px;
   background: transparent;
-  padding: 4px;
-  color: #9ca3af;
+  padding: 6px;
+  color: #91a0bc;
   cursor: pointer;
-  transition: color 0.2s ease;
+  transition:
+    transform var(--transition-fast),
+    color var(--transition-fast),
+    background-color var(--transition-fast);
 }
 
 .channel-sidebar__channel-rename-btn:hover {
   color: #ffffff;
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateY(-1px);
 }
 
 .channel-sidebar__channel-actions {
@@ -315,13 +333,13 @@ const handleInviteUser = async () => {
 }
 
 .channel-sidebar__channel-delete-btn:hover {
-  color: #f87171;
+  color: #ffb3c0;
 }
 
 .channel-sidebar__channel-prefix {
   margin-right: 8px;
   font-size: 16px;
-  color: #6b7280;
+  color: #7683a6;
 }
 
 .channel-sidebar__channel-name {
@@ -333,25 +351,28 @@ const handleInviteUser = async () => {
 .channel-sidebar__voice-count {
   margin-left: 8px;
   border-radius: 9999px;
-  background-color: #111827;
-  color: #d1d5db;
+  background: rgba(17, 24, 39, 0.95);
+  color: #d1d9ee;
   font-size: 11px;
   line-height: 1;
-  padding: 4px 6px;
+  padding: 4px 7px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
 
 .channel-sidebar__voice-count--active {
-  background-color: #1d4ed8;
+  background: rgba(29, 78, 216, 0.28);
   color: #dbeafe;
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.22);
 }
 
 .channel-sidebar__footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-top: 1px solid #374151;
-  background-color: rgba(17, 24, 39, 0.6);
-  padding: 8px 12px;
+  border-top: 1px solid rgba(148, 163, 184, 0.09);
+  background: rgba(9, 12, 20, 0.52);
+  padding: 10px 12px;
+  backdrop-filter: blur(18px);
 }
 
 .channel-sidebar__user-wrap {
@@ -367,8 +388,8 @@ const handleInviteUser = async () => {
   width: 32px;
   align-items: center;
   justify-content: center;
-  border-radius: 9999px;
-  background-color: #6366f1;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(124, 140, 255, 0.32), rgba(86, 104, 255, 0.22));
   color: #ffffff;
   font-size: 12px;
   font-weight: 700;
@@ -377,7 +398,7 @@ const handleInviteUser = async () => {
 .channel-sidebar__avatar-image {
   height: 32px;
   width: 32px;
-  border-radius: 9999px;
+  border-radius: 12px;
   object-fit: cover;
 }
 
@@ -390,7 +411,7 @@ const handleInviteUser = async () => {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   color: #ffffff;
 }
 
@@ -398,5 +419,16 @@ const handleInviteUser = async () => {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+@keyframes channel-list-entrance {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 </style>

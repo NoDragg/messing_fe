@@ -99,30 +99,31 @@ onUnmounted(() => {
 <style scoped>
 .login-view {
   display: flex;
-  height: 100vh;
-  width: 100vw;
+  min-height: 100svh;
+  width: 100%;
   align-items: center;
   justify-content: center;
-  background-color: #111827;
-  padding: 0 16px;
+  background: radial-gradient(circle at top, rgba(124, 140, 255, 0.16), transparent 34%), linear-gradient(180deg, rgba(12, 16, 28, 1), rgba(8, 12, 20, 1));
+  padding: 24px 16px;
   box-sizing: border-box;
 }
 
 .login-view__card {
-  width: 480px;
-  max-width: 100%;
-  border-radius: 6px;
-  background-color: #1f2937;
-  padding: 32px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  width: min(480px, 100%);
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(17, 23, 38, 0.98), rgba(11, 15, 25, 0.98));
+  padding: 34px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
   box-sizing: border-box;
+  border: 1px solid rgba(129, 140, 248, 0.12);
+  animation: auth-card-in 360ms cubic-bezier(.2,.8,.2,1);
 }
 
 .login-view__title {
   margin: 0;
   text-align: center;
   font-size: 24px;
-  font-weight: 700;
+  font-weight: 800;
   color: #ffffff;
 }
 
@@ -131,7 +132,7 @@ onUnmounted(() => {
   margin-bottom: 0;
   text-align: center;
   font-size: 14px;
-  color: #9ca3af;
+  color: #9ca9c4;
 }
 
 .login-view__form {
@@ -146,33 +147,40 @@ onUnmounted(() => {
   margin-bottom: 8px;
   display: block;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #d1d5db;
+  color: #d1d9ee;
 }
 
 .login-view__required {
-  color: #ef4444;
+  color: #ffb3c0;
 }
 
 .login-view__input {
   width: 100%;
-  border: none;
-  border-radius: 4px;
-  background-color: #111827;
-  padding: 10px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 14px;
+  background: rgba(18, 24, 40, 0.96);
+  padding: 12px 14px;
   color: #ffffff;
   font-size: 14px;
   box-sizing: border-box;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background-color var(--transition-fast);
 }
 
 .login-view__input::placeholder {
-  color: #6b7280;
+  color: #8a96b1;
 }
 
 .login-view__input:focus {
   outline: none;
+  border-color: rgba(124, 140, 255, 0.45);
+  box-shadow: 0 0 0 4px rgba(124, 140, 255, 0.12);
+  background: rgba(20, 26, 43, 0.98);
 }
 
 .login-view__forgot-password {
@@ -180,9 +188,9 @@ onUnmounted(() => {
   border: none;
   background: transparent;
   padding: 0;
-  color: #60a5fa;
+  color: #8eb4ff;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
 }
 
@@ -193,7 +201,7 @@ onUnmounted(() => {
 .login-view__error {
   margin: 0;
   font-size: 14px;
-  color: #ef4444;
+  color: #ffb3c0;
 }
 
 .login-view__submit-button {
@@ -204,23 +212,30 @@ onUnmounted(() => {
   justify-content: center;
   gap: 8px;
   border: none;
-  border-radius: 4px;
-  background-color: #6366f1;
-  padding: 10px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(124, 140, 255, 0.96), rgba(86, 104, 255, 0.96));
+  padding: 12px;
   color: #ffffff;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    opacity var(--transition-fast);
+  box-shadow: 0 12px 24px rgba(86, 104, 255, 0.24);
+  min-height: 48px;
 }
 
 .login-view__submit-button:hover {
-  background-color: #4f46e5;
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(86, 104, 255, 0.34);
 }
 
 .login-view__submit-button:disabled {
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.65;
+  transform: none;
 }
 
 .login-view__spinner {
@@ -238,19 +253,65 @@ onUnmounted(() => {
   }
 }
 
+@keyframes auth-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .login-view__register-hint {
   margin-top: 24px;
   margin-bottom: 0;
   font-size: 14px;
-  color: #9ca3af;
+  color: #9ca9c4;
 }
 
 .login-view__register-link {
-  color: #60a5fa;
-  font-weight: 500;
+  color: #8eb4ff;
+  font-weight: 600;
 }
 
 .login-view__register-link:hover {
   text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .login-view {
+    align-items: flex-start;
+    padding: 16px 12px 24px;
+  }
+
+  .login-view__card {
+    padding: 24px 18px 22px;
+    border-radius: 18px;
+  }
+
+  .login-view__title {
+    font-size: 22px;
+  }
+
+  .login-view__subtitle {
+    font-size: 13px;
+  }
+
+  .login-view__label {
+    font-size: 11px;
+  }
+
+  .login-view__input {
+    padding: 13px 14px;
+    border-radius: 12px;
+    font-size: 16px;
+  }
+
+  .login-view__submit-button {
+    min-height: 50px;
+    border-radius: 12px;
+  }
 }
 </style>

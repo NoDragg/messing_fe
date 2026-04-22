@@ -62,9 +62,11 @@ const getServerInitial = (server) => {
 
 <style scoped>
 .server-sidebar {
-  width: 72px;
-  background-color: #111827;
-  padding: 12px;
+  width: 84px;
+  background: linear-gradient(180deg, rgba(10, 14, 24, 0.94), rgba(7, 10, 18, 0.96));
+  border-right: 1px solid rgba(129, 140, 248, 0.12);
+  padding: 14px 12px;
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.02);
 }
 
 .server-sidebar__content {
@@ -74,28 +76,36 @@ const getServerInitial = (server) => {
   align-items: center;
   gap: 12px;
   overflow-y: auto;
+  animation: sidebar-entrance 420ms cubic-bezier(.2,.8,.2,1);
 }
 
-.server-sidebar__server-button {
+.server-sidebar__server-button,
+.server-sidebar__create-button {
   position: relative;
   display: flex;
-  height: 48px;
-  width: 48px;
+  height: 52px;
+  width: 52px;
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 9999px;
-  background-color: #374151;
-  color: #f3f4f6;
+  border-radius: 18px;
+  background: rgba(25, 31, 47, 0.98);
+  color: var(--text);
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    transform var(--transition-fast),
+    border-radius var(--transition-fast),
+    background-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    color var(--transition-fast);
   overflow: hidden;
   padding: 0;
   line-height: 0;
   appearance: none;
   -webkit-appearance: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
 
 .server-sidebar__server-icon {
@@ -107,50 +117,54 @@ const getServerInitial = (server) => {
   flex-shrink: 0;
 }
 
-.server-sidebar__server-button:hover {
-  background-color: #6366f1;
-  transform: translateY(-1px);
+.server-sidebar__server-button:hover,
+.server-sidebar__create-button:hover {
+  background: linear-gradient(180deg, rgba(124, 140, 255, 0.22), rgba(86, 104, 255, 0.18));
+  transform: translateY(-2px);
+  border-radius: 16px;
+  box-shadow: 0 14px 30px rgba(12, 18, 34, 0.45), 0 0 0 1px rgba(124, 140, 255, 0.16);
 }
 
 .server-sidebar__server-button--active {
-  background-color: #6366f1;
-  box-shadow: 0 0 0 2px #a5b4fc;
+  background: linear-gradient(180deg, rgba(124, 140, 255, 0.34), rgba(86, 104, 255, 0.22));
+  box-shadow: 0 16px 30px rgba(20, 28, 48, 0.55), 0 0 0 1px rgba(165, 180, 252, 0.28), 0 0 0 6px rgba(124, 140, 255, 0.08);
+  animation: ui-glow-pulse 2.8s ease-in-out infinite;
 }
 
 .server-sidebar__divider {
   margin: 4px 0;
   height: 1px;
-  width: 32px;
-  background-color: #374151;
+  width: 34px;
+  background: linear-gradient(90deg, transparent, rgba(129, 140, 248, 0.42), transparent);
 }
 
 .server-sidebar__create-button {
-  display: flex;
-  height: 48px;
-  width: 48px;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: 9999px;
-  background-color: #059669;
-  color: #ffffff;
-  font-size: 20px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  background: linear-gradient(180deg, rgba(29, 185, 129, 0.9), rgba(18, 154, 106, 0.9));
+  color: #effaf7;
 }
 
 .server-sidebar__create-button:hover {
-  border-radius: 12px;
-  background-color: #10b981;
+  background: linear-gradient(180deg, rgba(45, 212, 191, 0.9), rgba(18, 154, 106, 0.96));
 }
 
 .server-sidebar__create-button:disabled {
   cursor: not-allowed;
   opacity: 0.6;
+  transform: none;
 }
 
 .server-sidebar__create-loading {
   font-size: 14px;
+}
+
+@keyframes sidebar-entrance {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 </style>

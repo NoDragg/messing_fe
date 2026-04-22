@@ -30,19 +30,11 @@ export const useMainLayout = () => {
   const currentServerName = computed(() => serverStore.activeServer?.name || 'Server')
   const currentChannelId = computed(() => chatStore.currentChannelId)
   const selectedChannel = computed(() => channels.value.find((c) => c.id === chatStore.currentChannelId) || null)
-  const currentChannelName = computed(() => {
-    const matched = channels.value.find((c) => c.id === chatStore.currentChannelId)
-    return matched?.name || 'general'
-  })
+  const currentChannelName = computed(() => channels.value.find((c) => c.id === chatStore.currentChannelId)?.name || 'general')
   const isCurrentChannelVoice = computed(() => selectedChannel.value?.type === 'VOICE')
   const messages = computed(() => chatStore.messages)
 
-  const activeVoiceChannelName = computed(() => {
-    const id = voiceStore.activeVoiceChannelId
-    if (!id) return ''
-    const ch = channels.value.find((c) => c.id === id)
-    return ch?.name || 'Voice Channel'
-  })
+  const activeVoiceChannelName = computed(() => voiceStore.activeVoiceChannelName || '')
   const voiceParticipantCount = computed(() => voiceStore.voiceParticipantCount)
 
   const getChannelId = (channel) => channel?.id ?? channel?.channelId ?? null
@@ -63,6 +55,7 @@ export const useMainLayout = () => {
     if (voiceStore.activeVoiceChannelId) {
       await voiceStore.leaveVoiceChannel()
     }
+
     chatStore.unsubscribeFromChannel()
     chatStore.currentChannelId = null
     chatStore.messages = []
@@ -76,25 +69,31 @@ export const useMainLayout = () => {
 
     if (isVoice) {
       chatStore.unsubscribeFromChannel()
-      chatStore.currentChannelId = channelId
       chatStore.messages = []
+      chatStore.currentChannelId = channelId
 
-      const joined = await voiceStore.joinVoiceChannel(channelId)
+      const joined = await voiceStore.joinVoiceChannel(channelId, selected?.name || '')
       if (!joined) {
         showToast('Không thể tham gia voice channel.', 'error')
       }
       return
     }
 
-    await chatStore.fetchMessageHistory(channelId)
+    chatStore.unsubscribeFromChannel()
+    chatStore.messages = []
+    chatStore.currentChannelId = channelId
 
-    if (chatStore.isConnected) {
+    const history = await chatStore.fetchMessageHistory(channelId)
+
+    if (chatStore.isConnected && chatStore.currentChannelId === channelId) {
       chatStore.subscribeToChannel(channelId)
     }
 
     if (serverStore.activeServerId) {
       serverStore.setLastTextChannelForServer(serverStore.activeServerId, channelId)
     }
+
+    return history
   }
 
   const selectPreferredChannel = async (serverId, channelList) => {
@@ -193,7 +192,7 @@ export const useMainLayout = () => {
       return
     }
 
-    clearCurrentChannel()
+    await clearCurrentChannel()
   }
 
   const handleServerUpdated = () => {
@@ -202,7 +201,7 @@ export const useMainLayout = () => {
 
   const handleServerDeleted = async () => {
     if (!serverStore.activeServerId) {
-      clearCurrentChannel()
+      await clearCurrentChannel()
       return
     }
 
@@ -213,22 +212,16 @@ export const useMainLayout = () => {
       return
     }
 
-    clearCurrentChannel()
+    await clearCurrentChannel()
   }
 
   const handleSendMessage = (content) => {
     if (!chatStore.currentChannelId || !content?.trim()) return
 
     const wasPublished = chatStore.sendMessage(chatStore.currentChannelId, content)
-    if (wasPublished) return
-
-    chatStore.messages.push({
-      id: Date.now(),
-      senderId: authStore.user?.id,
-      senderUsername: currentUser.value?.username || currentUser.value?.email || 'Guest',
-      content: content.trim(),
-      createdAt: new Date().toISOString(),
-    })
+    if (!wasPublished) {
+      showToast('Không thể gửi tin nhắn. Vui lòng thử lại.', 'error')
+    }
   }
 
   const handleSendImage = async (file) => {
@@ -245,15 +238,12 @@ export const useMainLayout = () => {
     const leavingChannelId = voiceStore.activeVoiceChannelId
     if (!leavingChannelId) return
 
-    // Kiểm tra người dùng đang xem kênh nào
     const wasViewingVoice = isCurrentChannelVoice.value
 
     await voiceStore.leaveVoiceChannel()
 
-    // Nếu đang xem TEXT channel → giữ nguyên, không navigate
     if (!wasViewingVoice) return
 
-    // Đang xem VOICE channel → navigate về text channel đầu tiên
     const fallbackTextChannel = channels.value.find((channel) => channel.type !== 'VOICE')
     if (fallbackTextChannel?.id) {
       await handleSelectChannel(fallbackTextChannel.id)
@@ -266,7 +256,7 @@ export const useMainLayout = () => {
       return
     }
 
-    clearCurrentChannel()
+    await clearCurrentChannel()
   }
 
   const handleLogout = async () => {

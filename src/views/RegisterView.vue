@@ -109,38 +109,39 @@ const handleRegister = async () => {
 <style scoped>
 .register-view {
   display: flex;
-  min-height: 100vh;
-  width: 100vw;
+  min-height: 100svh;
+  width: 100%;
   align-items: center;
   justify-content: center;
-  background-color: #5865f2;
-  padding: 0 16px;
+  background: radial-gradient(circle at top, rgba(124, 140, 255, 0.16), transparent 34%), linear-gradient(180deg, rgba(12, 16, 28, 1), rgba(8, 12, 20, 1));
+  padding: 24px 16px;
   box-sizing: border-box;
 }
 
 .register-view__card {
-  width: 480px;
-  max-width: 100%;
-  border-radius: 5px;
-  background-color: #313338;
-  padding: 32px;
-  box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.2);
+  width: min(480px, 100%);
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(17, 23, 38, 0.98), rgba(11, 15, 25, 0.98));
+  padding: 34px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
   box-sizing: border-box;
+  border: 1px solid rgba(129, 140, 248, 0.12);
+  animation: auth-card-in 360ms cubic-bezier(.2,.8,.2,1);
 }
 
 .register-view__title {
   margin: 0;
   text-align: center;
   font-size: 24px;
-  font-weight: 600;
-  color: #f2f3f5;
+  font-weight: 800;
+  color: #f4f7ff;
 }
 
 .register-view__subtitle {
   margin: 8px 0 24px;
   text-align: center;
   font-size: 15px;
-  color: #b5bac1;
+  color: #9ca9c4;
 }
 
 .register-view__form > * + * {
@@ -154,36 +155,43 @@ const handleRegister = async () => {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #b5bac1;
+  color: #d1d9ee;
 }
 
 .register-view__required {
-  color: #ef4444;
+  color: #ffb3c0;
 }
 
 .register-view__input {
   width: 100%;
-  border: none;
-  border-radius: 3px;
-  background-color: #1e1f22;
-  padding: 10px;
-  color: #dbdee1;
-  font-size: 15px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 14px;
+  background: rgba(18, 24, 40, 0.96);
+  padding: 12px 14px;
+  color: #f4f8ff;
+  font-size: 14px;
   box-sizing: border-box;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background-color var(--transition-fast);
 }
 
 .register-view__input::placeholder {
-  color: #87909c;
+  color: #8a96b1;
 }
 
 .register-view__input:focus {
   outline: none;
+  border-color: rgba(124, 140, 255, 0.45);
+  box-shadow: 0 0 0 4px rgba(124, 140, 255, 0.12);
+  background: rgba(20, 26, 43, 0.98);
 }
 
 .register-view__error {
   margin: 0;
   font-size: 14px;
-  color: #f87171;
+  color: #ffb3c0;
 }
 
 .register-view__submit-button {
@@ -194,23 +202,30 @@ const handleRegister = async () => {
   justify-content: center;
   gap: 8px;
   border: none;
-  border-radius: 3px;
-  background-color: #5865f2;
-  padding: 10px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(124, 140, 255, 0.96), rgba(86, 104, 255, 0.96));
+  padding: 12px;
   color: #ffffff;
-  font-size: 15px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 700;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    opacity var(--transition-fast);
+  box-shadow: 0 12px 24px rgba(86, 104, 255, 0.24);
+  min-height: 48px;
 }
 
 .register-view__submit-button:hover {
-  background-color: #4752c4;
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(86, 104, 255, 0.34);
 }
 
 .register-view__submit-button:disabled {
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.65;
+  transform: none;
 }
 
 .register-view__spinner {
@@ -228,19 +243,59 @@ const handleRegister = async () => {
   }
 }
 
+@keyframes auth-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .register-view__login-hint {
   margin-top: 16px;
   margin-bottom: 0;
   font-size: 14px;
-  color: #b5bac1;
+  color: #9ca9c4;
 }
 
 .register-view__login-link {
-  color: #00a8fc;
-  font-weight: 500;
+  color: #8eb4ff;
+  font-weight: 600;
 }
 
 .register-view__login-link:hover {
   text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .register-view {
+    align-items: flex-start;
+    padding: 16px 12px 24px;
+  }
+
+  .register-view__card {
+    padding: 24px 18px 22px;
+    border-radius: 18px;
+  }
+
+  .register-view__title {
+    font-size: 22px;
+  }
+
+  .register-view__subtitle {
+    font-size: 13px;
+  }
+
+  .register-view__input {
+    padding: 13px 14px;
+    font-size: 16px;
+  }
+
+  .register-view__label {
+    font-size: 11px;
+  }
 }
 </style>
