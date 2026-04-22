@@ -19,7 +19,7 @@ const { toastState } = useToast()
 }
 
 :deep(*) {
-  scrollbar-color: rgba(124, 140, 255, 0.35) rgba(8, 12, 22, 0.7);
+  scrollbar-color: rgba(255, 127, 193, 0.32) rgba(24, 15, 27, 0.7);
 }
 
 :deep(::-webkit-scrollbar) {
@@ -28,17 +28,17 @@ const { toastState } = useToast()
 }
 
 :deep(::-webkit-scrollbar-track) {
-  background: rgba(8, 12, 22, 0.7);
+  background: rgba(24, 15, 27, 0.7);
 }
 
 :deep(::-webkit-scrollbar-thumb) {
-  background: linear-gradient(180deg, rgba(124, 140, 255, 0.55), rgba(82, 97, 255, 0.32));
+  background: linear-gradient(180deg, rgba(255, 127, 193, 0.5), rgba(184, 106, 232, 0.34));
   border-radius: 999px;
-  border: 2px solid rgba(8, 12, 22, 0.7);
+  border: 2px solid rgba(24, 15, 27, 0.7);
 }
 
 :deep(::-webkit-scrollbar-thumb:hover) {
-  background: linear-gradient(180deg, rgba(124, 140, 255, 0.8), rgba(82, 97, 255, 0.5));
+  background: linear-gradient(180deg, rgba(255, 127, 193, 0.74), rgba(184, 106, 232, 0.5));
 }
 
 @media (max-width: 768px) {
