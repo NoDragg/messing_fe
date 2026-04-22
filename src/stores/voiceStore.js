@@ -318,22 +318,21 @@ export const useVoiceStore = defineStore('voice', () => {
     return {
         activeVoiceChannelId,
         activeVoiceChannelName,
-        activeSessionId,
         room,
         participants,
         muted,
         deafened,
-        lastError,
-        latestChannelState,
         isInVoiceChannel,
         voiceParticipantCount,
+        activeSpeakerId: computed(() => {
+            const speaker = participants.value.find(p => p.speaking && !p.isLocal)
+            return speaker?.id || null
+        }),
         joinVoiceChannel,
         leaveVoiceChannel,
         toggleMute,
         toggleDeafen,
         syncVoiceState,
-        toggleMicOnServer,
-        refreshParticipants,
         reset,
     }
 })

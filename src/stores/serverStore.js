@@ -198,16 +198,6 @@ export const useServerStore = defineStore('server', () => {
     }
   }
 
-  const inviteMember = async (serverId, email) => {
-    try {
-      isInvitingMember.value = true
-      const response = await api.post(`/api/servers/${serverId}/invite`, { email })
-      return response.data
-    } finally {
-      isInvitingMember.value = false
-    }
-  }
-
   const setActiveServer = (server) => {
     activeServer.value = server
   }
@@ -338,7 +328,6 @@ export const useServerStore = defineStore('server', () => {
     renameChannel,
     deleteChannel,
     createInviteLink,
-    inviteMember,
     acceptInvite,
     setActiveServer,
     fetchChannelsByServer,

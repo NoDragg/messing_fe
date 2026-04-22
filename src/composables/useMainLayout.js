@@ -35,7 +35,6 @@ export const useMainLayout = () => {
   const messages = computed(() => chatStore.messages)
 
   const activeVoiceChannelName = computed(() => voiceStore.activeVoiceChannelName || '')
-  const voiceParticipantCount = computed(() => voiceStore.voiceParticipantCount)
 
   const getChannelId = (channel) => channel?.id ?? channel?.channelId ?? null
 
@@ -300,7 +299,6 @@ export const useMainLayout = () => {
 
   return {
     router,
-    authStore,
     serverStore,
     chatStore,
     voiceStore,
@@ -322,7 +320,6 @@ export const useMainLayout = () => {
     selectedChannel,
     messages,
     activeVoiceChannelName,
-    voiceParticipantCount,
     handleSelectServer,
     handleSelectChannel,
     openCreateServerModal,
