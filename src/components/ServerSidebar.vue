@@ -24,38 +24,44 @@ const getServerInitial = (server) => {
 <template>
   <aside class="server-sidebar">
     <div class="server-sidebar__content">
-      <button
+      <div
         v-for="server in servers"
         :key="server.id"
-        type="button"
-        :title="server.name"
-        class="server-sidebar__server-button"
-        :class="{
-          'server-sidebar__server-button--active': currentServerId === server.id,
-        }"
-        @click="emit('select-server', server.id)"
+        class="server-sidebar__item-wrap"
       >
-        <img
-          v-if="server.iconUrl"
-          :src="server.iconUrl"
-          :alt="server.name"
-          class="server-sidebar__server-icon"
-        />
-        <span v-else>{{ getServerInitial(server) }}</span>
-      </button>
+        <button
+          type="button"
+          class="server-sidebar__server-button"
+          :class="{
+            'server-sidebar__server-button--active': currentServerId === server.id,
+          }"
+          @click="emit('select-server', server.id)"
+        >
+          <img
+            v-if="server.iconUrl"
+            :src="server.iconUrl"
+            :alt="server.name"
+            class="server-sidebar__server-icon"
+          />
+          <span v-else>{{ getServerInitial(server) }}</span>
+        </button>
+        <div class="server-sidebar__tooltip" role="tooltip">{{ server.name }}</div>
+      </div>
 
       <div class="server-sidebar__divider"></div>
 
-      <button
-        type="button"
-        class="server-sidebar__create-button"
-        :disabled="isCreatingServer"
-        title="Tạo server mới"
-        @click="emit('create-server')"
-      >
-        <span v-if="!isCreatingServer">+</span>
-        <span v-else class="server-sidebar__create-loading">...</span>
-      </button>
+      <div class="server-sidebar__item-wrap">
+        <button
+          type="button"
+          class="server-sidebar__create-button"
+          :disabled="isCreatingServer"
+          @click="emit('create-server')"
+        >
+          <span v-if="!isCreatingServer">+</span>
+          <span v-else class="server-sidebar__create-loading">...</span>
+        </button>
+        <div class="server-sidebar__tooltip" role="tooltip">Tạo server mới</div>
+      </div>
     </div>
   </aside>
 </template>
@@ -67,6 +73,60 @@ const getServerInitial = (server) => {
   border-right: 1px solid rgba(129, 140, 248, 0.12);
   padding: 14px 12px;
   box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.02);
+}
+
+.server-sidebar__item-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.server-sidebar__tooltip {
+  pointer-events: none;
+  position: absolute;
+  left: calc(100% + 14px);
+  top: 50%;
+  transform: translateY(-50%) scale(0.88);
+  transform-origin: left center;
+  background: rgba(14, 18, 30, 0.97);
+  border: 1px solid rgba(129, 140, 248, 0.18);
+  color: #e8ecf8;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  padding: 7px 13px;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255,255,255,0.04);
+  opacity: 0;
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+  z-index: 100;
+}
+
+.server-sidebar__tooltip::before {
+  content: '';
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 6px solid transparent;
+  border-right-color: rgba(129, 140, 248, 0.18);
+}
+
+.server-sidebar__tooltip::after {
+  content: '';
+  position: absolute;
+  right: calc(100% - 1px);
+  top: 50%;
+  transform: translateY(-50%);
+  border: 6px solid transparent;
+  border-right-color: rgba(14, 18, 30, 0.97);
+}
+
+.server-sidebar__item-wrap:hover .server-sidebar__tooltip {
+  opacity: 1;
+  transform: translateY(-50%) scale(1);
 }
 
 .server-sidebar__content {

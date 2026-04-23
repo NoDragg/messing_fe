@@ -29,9 +29,13 @@ defineProps({
     type: Object,
     default: () => ({}),
   },
+  collapsed: {
+    type: Boolean,
+    default: false,
+  },
 })
 
-const emit = defineEmits(['select-channel', 'rename-channel', 'delete-channel', 'edit-server', 'delete-server', 'open-settings', 'create-channel', 'logout'])
+const emit = defineEmits(['select-channel', 'rename-channel', 'delete-channel', 'edit-server', 'delete-server', 'open-settings', 'create-channel', 'logout', 'toggle-collapse'])
 
 const serverStore = useServerStore()
 const { showToast } = useToast()
@@ -64,7 +68,7 @@ const handleInviteUser = async () => {
 </script>
 
 <template>
-  <aside class="channel-sidebar">
+  <aside class="channel-sidebar" :class="{ 'channel-sidebar--collapsed': collapsed }">
     <header class="channel-sidebar__header">
       <h2 class="channel-sidebar__server-name">{{ serverName }}</h2>
       <div class="channel-sidebar__actions">
@@ -203,6 +207,14 @@ const handleInviteUser = async () => {
   background: linear-gradient(180deg, rgba(13, 17, 28, 0.96), rgba(11, 14, 24, 0.98));
   border-right: 1px solid rgba(129, 140, 248, 0.12);
   box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.02);
+  overflow: hidden;
+  transition: width 240ms cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+
+.channel-sidebar--collapsed {
+  width: 0;
+  border-right-color: transparent;
 }
 
 .channel-sidebar__header {

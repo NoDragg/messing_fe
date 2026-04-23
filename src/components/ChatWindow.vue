@@ -1,5 +1,5 @@
 <script setup>
-import { Mic, MicOff, Headphones, HeadphoneOff, PhoneOff, Volume2 } from 'lucide-vue-next'
+import { Mic, MicOff, Headphones, HeadphoneOff, PhoneOff, Volume2, PanelLeftOpen, PanelLeftClose, ChevronLeft } from 'lucide-vue-next'
 import MessageList from '@/components/chat/MessageList.vue'
 import MessageComposer from '@/components/chat/MessageComposer.vue'
 
@@ -33,14 +33,39 @@ defineProps({
     type: Boolean,
     default: false,
   },
+  channelSidebarCollapsed: {
+    type: Boolean,
+    default: false,
+  },
 })
 
-const emit = defineEmits(['send-message', 'send-image', 'voice-mute', 'voice-deafen', 'voice-leave'])
+const emit = defineEmits(['send-message', 'send-image', 'voice-mute', 'voice-deafen', 'voice-leave', 'toggle-channel-sidebar', 'back'])
 </script>
 
 <template>
   <section class="chat-window">
     <header class="chat-window__header">
+      <!-- Mobile back button -->
+      <button
+        type="button"
+        class="chat-window__back-btn"
+        title="Quay lại"
+        @click="emit('back')"
+      >
+        <ChevronLeft :size="18" />
+      </button>
+
+      <!-- Desktop: toggle channel sidebar -->
+      <button
+        type="button"
+        class="chat-window__toggle-btn"
+        :title="channelSidebarCollapsed ? 'Mở danh sách kênh' : 'Thu gọn danh sách kênh'"
+        @click="emit('toggle-channel-sidebar')"
+      >
+        <PanelLeftOpen v-if="channelSidebarCollapsed" :size="17" />
+        <PanelLeftClose v-else :size="17" />
+      </button>
+
       <h2 class="chat-window__title"># {{ channelName }}</h2>
 
       <!-- Voice Controls: chỉ hiện khi đang trong voice channel -->
@@ -99,6 +124,7 @@ const emit = defineEmits(['send-message', 'send-image', 'voice-mute', 'voice-dea
 .chat-window {
   display: flex;
   flex: 1;
+  min-width: 0;
   flex-direction: column;
   background: linear-gradient(180deg, rgba(17, 23, 38, 0.8), rgba(12, 16, 28, 0.94));
   position: relative;
@@ -118,10 +144,49 @@ const emit = defineEmits(['send-message', 'send-image', 'voice-mute', 'voice-dea
   height: 60px;
   align-items: center;
   border-bottom: 1px solid rgba(148, 163, 184, 0.09);
-  padding: 0 18px;
-  gap: 12px;
+  padding: 0 14px 0 10px;
+  gap: 8px;
   background: rgba(9, 12, 20, 0.38);
   backdrop-filter: blur(16px);
+}
+
+.chat-window__toggle-btn,
+.chat-window__back-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #8897b8;
+  padding: 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    color 150ms ease,
+    background-color 150ms ease,
+    transform 150ms ease;
+}
+
+.chat-window__toggle-btn:hover,
+.chat-window__back-btn:hover {
+  color: #ffffff;
+  background: rgba(124, 140, 255, 0.12);
+  transform: translateY(-1px);
+}
+
+/* Mobile: show back-btn, hide toggle-btn */
+.chat-window__back-btn {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .chat-window__toggle-btn {
+    display: none;
+  }
+  .chat-window__back-btn {
+    display: inline-flex;
+  }
 }
 
 .chat-window__title {
