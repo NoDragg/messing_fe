@@ -9,7 +9,9 @@ import {
 } from '@stomp/stompjs'
 import SockJS from 'sockjs-client/dist/sockjs'
 import api from '@/services/api'
-import { useAuthStore } from '@/stores/authStore'
+import {
+    useAuthStore
+} from '@/stores/authStore'
 import {
     loadRuntimeConfig
 } from '@/config'
@@ -24,7 +26,14 @@ export const useChatStore = defineStore('chat', () => {
     const isLoading = ref(false)
     const error = ref('')
     const requestToken = ref(0)
+    const botBusy = ref(false)
+    const botMode = ref(false)
+    const botPlaceholderId = ref(null)
+    const botRequestAbort = ref(null)
     let runtimeConfigPromise = null
+
+    const BOT_COMMAND = '/bot'
+    const BOT_ENDPOINT = '/api/bot/chat'
 
     const getWsUrl = async () => {
         if (!runtimeConfigPromise) {
@@ -128,26 +137,8 @@ export const useChatStore = defineStore('chat', () => {
             `/topic/channels/${channelId}`,
             (payload) => {
                 const message = JSON.parse(payload.body)
-                const pendingIndex = messages.value.findIndex((existing) => {
-                    return existing?.pending &&
-                        existing.senderId === message.senderId &&
-                        existing.content === message.content &&
-                        existing.channelId === message.channelId
-                })
 
-                if (pendingIndex !== -1) {
-                    messages.value.splice(pendingIndex, 1, {
-                        ...message,
-                        pending: false,
-                    })
-                    return
-                }
-
-                const duplicateIndex = messages.value.findIndex((existing) => {
-                    return !existing?.pending &&
-                        existing.id === message.id
-                })
-
+                const duplicateIndex = messages.value.findIndex((existing) => existing.id === message.id)
                 if (duplicateIndex !== -1) {
                     messages.value.splice(duplicateIndex, 1, message)
                     return
@@ -167,13 +158,92 @@ export const useChatStore = defineStore('chat', () => {
             type: 'TEXT',
             createdAt: new Date().toISOString(),
             senderId: currentUser.id || '__pending__',
-            senderUsername: currentUser.username || 'You',
+            senderUsername: currentUser.loginName || currentUser.username || 'You',
             senderAvatarUrl: currentUser.avatarUrl || null,
             pending: true,
         }
 
         messages.value.push(pendingMessage)
         return pendingMessage
+    }
+
+    const normalizeBotStreamChunk = (chunk) => {
+        if (chunk == null) return ''
+        if (typeof chunk === 'string') return chunk
+        if (typeof chunk?.content === 'string') return chunk.content
+        if (typeof chunk?.delta === 'string') return chunk.delta
+        if (typeof chunk?.text === 'string') return chunk.text
+        if (typeof chunk?.data === 'string') return chunk.data
+        return ''
+    }
+
+    const upsertBotPlaceholder = (channelId, question) => {
+        const placeholderId = `bot-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+        const botMessage = {
+            id: placeholderId,
+            channelId,
+            content: question,
+            type: 'TEXT',
+            createdAt: new Date().toISOString(),
+            senderId: 'bot',
+            senderUsername: 'Bot',
+      senderDisplayName: 'Bot',
+            senderAvatarUrl: null,
+            bot: true,
+            streaming: true,
+            pending: true,
+        }
+
+        messages.value.push(botMessage)
+        botPlaceholderId.value = placeholderId
+        return botMessage
+    }
+
+    const updateBotPlaceholder = (messageId, patch = {}) => {
+        const index = messages.value.findIndex((message) => message.id === messageId)
+        if (index === -1) return null
+
+        messages.value[index] = {
+            ...messages.value[index],
+            ...patch,
+        }
+
+        return messages.value[index]
+    }
+
+    const appendBotChunk = (chunk) => {
+        if (!botPlaceholderId.value) return null
+        const text = normalizeBotStreamChunk(chunk)
+        if (!text) return null
+
+        const current = messages.value.find((message) => message.id === botPlaceholderId.value)
+        if (!current) return null
+
+        return updateBotPlaceholder(botPlaceholderId.value, {
+            content: `${current.content || ''}${text}`,
+            pending: false,
+            streaming: true,
+        })
+    }
+
+    const finalizeBotMessage = (messageId, { content, errorMessage } = {}) => {
+        if (!messageId) return null
+        const patch = {
+            pending: false,
+            streaming: false,
+        }
+        if (typeof content === 'string') patch.content = content
+        if (errorMessage) {
+            patch.error = true
+            patch.content = errorMessage
+        }
+        const updated = updateBotPlaceholder(messageId, patch)
+        if (botPlaceholderId.value === messageId) {
+            botPlaceholderId.value = null
+        }
+        botBusy.value = false
+        botRequestAbort.value = null
+        return updated
     }
 
     const sendMessage = (channelId, content) => {
@@ -186,11 +256,149 @@ export const useChatStore = defineStore('chat', () => {
         stompClient.value.publish({
             destination: `/app/chat/${channelId}/sendMessage`,
             body: JSON.stringify({
-                content: content.trim()
+                content: content.trim(),
             }),
         })
 
         return true
+    }
+
+    const isBotCommand = (content) => {
+        const trimmed = content?.trim() || ''
+        return trimmed.toLowerCase().startsWith(BOT_COMMAND)
+    }
+
+    const extractBotQuestion = (content) => {
+        const trimmed = content?.trim() || ''
+        if (!trimmed.toLowerCase().startsWith(BOT_COMMAND)) return ''
+        return trimmed.slice(BOT_COMMAND.length).trim()
+    }
+
+    const setBotMode = (value) => {
+        botMode.value = Boolean(value)
+    }
+
+    const cancelBotRequest = () => {
+        botRequestAbort.value?.abort?.()
+        botRequestAbort.value = null
+        botBusy.value = false
+    }
+
+    const sendBotMessage = async (channelId, content) => {
+        if (!channelId || !content?.trim()) {
+            return {
+                ok: false,
+                error: 'empty',
+            }
+        }
+
+        const question = extractBotQuestion(content)
+        if (question === '' && isBotCommand(content)) {
+            return {
+                ok: false,
+                error: 'missing_question',
+            }
+        }
+
+        if (!question) {
+            return {
+                ok: false,
+                error: 'not_bot',
+            }
+        }
+
+        if (botBusy.value) {
+            return {
+                ok: false,
+                error: 'busy',
+            }
+        }
+
+        const placeholder = upsertBotPlaceholder(channelId, '')
+        botBusy.value = true
+        const controller = new AbortController()
+        botRequestAbort.value = controller
+
+        try {
+            const response = await fetch(`${api.defaults.baseURL.replace(/\/$/, '')}${BOT_ENDPOINT}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(localStorage.getItem('token') ? { Authorization: `Bearer ${localStorage.getItem('token')}` } : {}),
+                },
+                body: JSON.stringify({
+                    channelId,
+                    question,
+                    stream: true,
+                }),
+                signal: controller.signal,
+            })
+
+            if (!response.ok) {
+                let message = 'Bot hiện không phản hồi được, vui lòng thử lại.'
+                try {
+                    const errorBody = await response.json()
+                    message = errorBody?.message || errorBody?.error || message
+                } catch (_parseError) {
+                    // ignore body parse errors
+                }
+
+                throw new Error(message)
+            }
+
+            const contentType = response.headers.get('content-type') || ''
+            if (contentType.includes('text/event-stream') || contentType.includes('text/plain')) {
+                const reader = response.body?.getReader()
+                const decoder = new TextDecoder()
+                let accumulated = ''
+
+                if (reader) {
+                    while (true) {
+                        const { value, done } = await reader.read()
+                        if (done) break
+
+                        const chunkText = decoder.decode(value, { stream: true })
+                        const lines = chunkText.split(/\r?\n/).filter(Boolean)
+                        lines.forEach((line) => {
+                            const cleaned = line.replace(/^data:\s*/i, '')
+                            if (!cleaned || cleaned === '[DONE]') return
+                            accumulated += cleaned
+                            appendBotChunk(cleaned)
+                        })
+                    }
+                }
+
+                finalizeBotMessage(placeholder.id, { content: accumulated.trim() })
+                return { ok: true, streaming: true }
+            }
+
+            const payload = await response.json().catch(async () => {
+                const text = await response.text()
+                return text
+            })
+
+            if (typeof payload === 'string') {
+                finalizeBotMessage(placeholder.id, { content: payload })
+                return { ok: true, streaming: false }
+            }
+
+            if (payload && typeof payload === 'object') {
+                const finalContent = payload.content || payload.message || payload.answer || payload.data || ''
+                finalizeBotMessage(placeholder.id, { content: finalContent })
+                return { ok: true, streaming: false }
+            }
+
+            finalizeBotMessage(placeholder.id, { content: question })
+            return { ok: true, streaming: false }
+        } catch (error) {
+            finalizeBotMessage(placeholder?.id, {
+                errorMessage: error?.message || error?.response?.data?.message || 'Bot hiện không phản hồi được, vui lòng thử lại.',
+            })
+            return {
+                ok: false,
+                error,
+            }
+        }
     }
 
     const unsubscribeFromChannel = () => {
@@ -219,6 +427,7 @@ export const useChatStore = defineStore('chat', () => {
 
     const disconnectWebSocket = () => {
         unsubscribeFromChannel()
+        cancelBotRequest()
 
         if (stompClient.value) {
             stompClient.value.deactivate()
@@ -233,6 +442,9 @@ export const useChatStore = defineStore('chat', () => {
         currentChannelId.value = null
         messages.value = []
         error.value = ''
+        botMode.value = false
+        botBusy.value = false
+        botPlaceholderId.value = null
     }
 
     return {
@@ -243,12 +455,21 @@ export const useChatStore = defineStore('chat', () => {
         isConnected,
         isLoading,
         error,
+        botMode,
+        botBusy,
         fetchMessageHistory,
         connectWebSocket,
         subscribeToChannel,
         unsubscribeFromChannel,
         sendMessage,
+        sendBotMessage,
         sendImage,
+        isBotCommand,
+        extractBotQuestion,
+        setBotMode,
+        cancelBotRequest,
+        appendBotChunk,
+        finalizeBotMessage,
         disconnectWebSocket,
         reset,
     }

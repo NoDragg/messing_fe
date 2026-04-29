@@ -37,6 +37,8 @@ const {
   isCurrentChannelVoice,
   selectedChannel,
   messages,
+  botMode,
+  botBusy,
   activeVoiceChannelName,
   handleSelectServer,
   handleSelectChannel,
@@ -53,6 +55,7 @@ const {
   handleServerDeleted,
   handleSendMessage,
   handleSendImage,
+  handleToggleBotMode,
   handleLeaveVoiceChannel,
   handleLogout,
 } = useMainLayout()
@@ -131,6 +134,8 @@ const onMobileBack = () => {
       :channel-name="currentChannelName"
       :messages="messages"
       :loading="chatStore.isLoading || serverStore.isLoadingChannels"
+      :bot-mode="botMode"
+      :bot-busy="botBusy"
       :is-in-voice="voiceStore.isInVoiceChannel"
       :voice-channel-name="activeVoiceChannelName"
       :muted="voiceStore.muted"
@@ -139,6 +144,7 @@ const onMobileBack = () => {
       class="main-layout__chat-area"
       @send-message="handleSendMessage"
       @send-image="handleSendImage"
+      @toggle-bot-mode="handleToggleBotMode"
       @voice-mute="voiceStore.toggleMute"
       @voice-deafen="voiceStore.toggleDeafen"
       @voice-leave="handleLeaveVoiceChannel"

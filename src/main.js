@@ -16,7 +16,7 @@ const bootstrap = async () => {
   app.use(pinia)
 
   const authStore = useAuthStore(pinia)
-  authStore.initAuth()
+  await authStore.initAuth()
 
   app.use(router)
   app.mount('#app')

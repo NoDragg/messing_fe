@@ -110,6 +110,7 @@ export const useServerStore = defineStore('server', () => {
           servers.value[index] = {
             ...servers.value[index],
             ...updated,
+            botUser: updated,
           }
         }
 
@@ -117,6 +118,7 @@ export const useServerStore = defineStore('server', () => {
           activeServer.value = {
             ...activeServer.value,
             ...updated,
+            botUser: updated,
           }
         }
       }
@@ -161,6 +163,50 @@ export const useServerStore = defineStore('server', () => {
       }
 
       return iconUrl
+    } finally {
+      isCreatingServer.value = false
+    }
+  }
+
+  const updateServerBot = async (serverId, payload) => {
+    if (!serverId) return null
+
+    try {
+      isCreatingServer.value = true
+
+      const formData = new FormData()
+      if (payload?.displayName?.trim()) {
+        formData.append('displayName', payload.displayName.trim())
+      }
+      if (payload?.avatarFile) {
+        formData.append('avatar', payload.avatarFile)
+      }
+
+      const response = await api.put(`/api/servers/${serverId}/bot`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+      const updated = response.data
+
+      if (updated) {
+        const index = servers.value.findIndex((server) => server.id === serverId)
+        if (index !== -1) {
+          servers.value[index] = {
+            ...servers.value[index],
+            ...updated,
+          }
+        }
+
+        if (activeServer.value?.id === serverId) {
+          activeServer.value = {
+            ...activeServer.value,
+            ...updated,
+          }
+        }
+      }
+
+      return updated
     } finally {
       isCreatingServer.value = false
     }
@@ -323,6 +369,7 @@ export const useServerStore = defineStore('server', () => {
     createServer,
     updateServer,
     updateServerAvatar,
+    updateServerBot,
     deleteServer,
     createChannel,
     renameChannel,

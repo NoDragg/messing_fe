@@ -1,23 +1,42 @@
 <script setup>
-import { ImagePlus } from 'lucide-vue-next'
-import { ref } from 'vue'
+import { Bot, ImagePlus } from 'lucide-vue-next'
+import { computed, ref } from 'vue'
 
 const props = defineProps({
   channelName: {
     type: String,
     default: 'general',
   },
+  botMode: {
+    type: Boolean,
+    default: false,
+  },
+  botBusy: {
+    type: Boolean,
+    default: false,
+  },
 })
 
-const emit = defineEmits(['send-message', 'send-image'])
+const emit = defineEmits(['send-message', 'send-image', 'toggle-bot-mode'])
 
 const newMessage = ref('')
 const fileInputRef = ref(null)
+
+const placeholderText = computed(() => {
+  if (props.botMode) return `Hỏi Bot trong #${props.channelName}...`
+  return `Nhắn tin vào #${props.channelName}... `
+})
 
 const handleSubmit = () => {
   if (!newMessage.value.trim()) return
   emit('send-message', newMessage.value)
   newMessage.value = ''
+}
+
+const handleKeydown = (event) => {
+  if (event.key !== 'Enter') return
+  event.preventDefault()
+  handleSubmit()
 }
 
 const triggerSelectImage = () => {
@@ -39,6 +58,16 @@ const handleFileSelected = (event) => {
       <button
         type="button"
         class="message-composer__icon-button"
+        :class="{ 'message-composer__icon-button--active': botMode }"
+        title="Chế độ Bot"
+        @click="emit('toggle-bot-mode')"
+      >
+        <Bot :size="18" />
+      </button>
+
+      <button
+        type="button"
+        class="message-composer__icon-button"
         title="Gửi ảnh"
         @click="triggerSelectImage"
       >
@@ -57,7 +86,9 @@ const handleFileSelected = (event) => {
         v-model="newMessage"
         type="text"
         class="message-composer__input"
-        :placeholder="`Nhắn tin vào #${channelName}...`"
+        :placeholder="placeholderText"
+        :disabled="botBusy"
+        @keydown="handleKeydown"
       />
     </form>
   </div>
@@ -99,6 +130,11 @@ const handleFileSelected = (event) => {
   color: #ffffff;
   background: rgba(124, 140, 255, 0.12);
   transform: translateY(-1px);
+}
+
+.message-composer__icon-button--active {
+  color: #a5b4fc;
+  background: rgba(124, 140, 255, 0.16);
 }
 
 .message-composer__file-input {

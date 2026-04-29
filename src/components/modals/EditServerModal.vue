@@ -19,12 +19,15 @@ const serverStore = useServerStore()
 const { showToast } = useToast()
 
 const serverName = ref('')
+const botDisplayName = ref('')
 const selectedAvatarFile = ref(null)
-const avatarPreview = ref('')
+const botAvatarPreview = ref('')
 const pendingCropFile = ref(null)
 const showCropModal = ref(false)
 const modalError = ref('')
 const isSaving = ref(false)
+
+const getDisplayName = (value) => value?.displayName || value?.loginName || value?.username || value?.name || 'Messing Bot'
 
 watch(
   () => props.show,
@@ -32,7 +35,8 @@ watch(
     if (!visible) return
 
     serverName.value = props.server?.name || ''
-    avatarPreview.value = props.server?.iconUrl || ''
+    botDisplayName.value = getDisplayName(props.server?.botUser) || props.server?.botDisplayName || 'Messing Bot'
+    botAvatarPreview.value = props.server?.botUser?.avatarUrl || props.server?.botAvatarUrl || ''
     selectedAvatarFile.value = null
     modalError.value = ''
   },
@@ -55,7 +59,7 @@ const handleAvatarSelected = (event) => {
 
 const handleAvatarCropped = ({ file, previewUrl }) => {
   selectedAvatarFile.value = file
-  avatarPreview.value = previewUrl
+  botAvatarPreview.value = previewUrl
   pendingCropFile.value = null
   showCropModal.value = false
 }
@@ -79,8 +83,13 @@ const handleConfirm = async () => {
       name: serverName.value.trim(),
     })
 
-    if (selectedAvatarFile.value) {
-      await serverStore.updateServerAvatar(props.server.id, selectedAvatarFile.value)
+    const nextBotDisplayName = botDisplayName.value.trim()
+
+    if (selectedAvatarFile.value || nextBotDisplayName) {
+      await serverStore.updateServerBot(props.server.id, {
+        displayName: nextBotDisplayName || undefined,
+        avatarFile: selectedAvatarFile.value || null,
+      })
     }
 
     showToast('Cập nhật server thành công.', 'success')
@@ -116,25 +125,38 @@ const handleConfirm = async () => {
         placeholder="Nhập tên server"
       />
 
-      <label class="edit-server-modal__label" for="server-avatar">Ảnh đại diện</label>
-      <div class="edit-server-modal__avatar-row">
-        <img
-          v-if="avatarPreview"
-          :src="avatarPreview"
-          alt="Server avatar preview"
-          class="edit-server-modal__avatar"
-        />
-        <div v-else class="edit-server-modal__avatar edit-server-modal__avatar--placeholder">
-          {{ (serverName || 'S').charAt(0).toUpperCase() }}
-        </div>
-
+      <div class="edit-server-modal__section">
+        <div class="edit-server-modal__section-title">Bot của server</div>
+        <label class="edit-server-modal__label" for="bot-display-name">Tên hiển thị bot</label>
         <input
-          id="server-avatar"
-          type="file"
-          accept="image/*"
-          class="edit-server-modal__file-input"
-          @change="handleAvatarSelected"
+          id="bot-display-name"
+          v-model="botDisplayName"
+          type="text"
+          class="edit-server-modal__input"
+          maxlength="100"
+          placeholder="Ví dụ: Messing Helper"
         />
+
+        <label class="edit-server-modal__label" for="bot-avatar">Avatar bot</label>
+        <div class="edit-server-modal__avatar-row">
+          <img
+            v-if="botAvatarPreview"
+            :src="botAvatarPreview"
+            alt="Bot avatar preview"
+            class="edit-server-modal__avatar"
+          />
+          <div v-else class="edit-server-modal__avatar edit-server-modal__avatar--placeholder">
+            {{ (botDisplayName || 'B').charAt(0).toUpperCase() }}
+          </div>
+
+          <input
+            id="bot-avatar"
+            type="file"
+            accept="image/*"
+            class="edit-server-modal__file-input"
+            @change="handleAvatarSelected"
+          />
+        </div>
       </div>
 
       <p v-if="modalError" class="edit-server-modal__error">{{ modalError }}</p>

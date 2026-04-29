@@ -3,7 +3,7 @@ import { Mic, MicOff, Headphones, HeadphoneOff, PhoneOff, Volume2, PanelLeftOpen
 import MessageList from '@/components/chat/MessageList.vue'
 import MessageComposer from '@/components/chat/MessageComposer.vue'
 
-defineProps({
+const props = defineProps({
   channelName: {
     type: String,
     default: 'general',
@@ -13,6 +13,14 @@ defineProps({
     default: () => [],
   },
   loading: {
+    type: Boolean,
+    default: false,
+  },
+  botMode: {
+    type: Boolean,
+    default: false,
+  },
+  botBusy: {
     type: Boolean,
     default: false,
   },
@@ -39,7 +47,7 @@ defineProps({
   },
 })
 
-const emit = defineEmits(['send-message', 'send-image', 'voice-mute', 'voice-deafen', 'voice-leave', 'toggle-channel-sidebar', 'back'])
+const emit = defineEmits(['send-message', 'send-image', 'voice-mute', 'voice-deafen', 'voice-leave', 'toggle-channel-sidebar', 'back', 'toggle-bot-mode'])
 </script>
 
 <template>
@@ -114,8 +122,11 @@ const emit = defineEmits(['send-message', 'send-image', 'voice-mute', 'voice-dea
 
     <MessageComposer
       :channel-name="channelName"
+      :bot-mode="botMode"
+      :bot-busy="botBusy"
       @send-message="emit('send-message', $event)"
       @send-image="emit('send-image', $event)"
+      @toggle-bot-mode="emit('toggle-bot-mode')"
     />
   </section>
 </template>

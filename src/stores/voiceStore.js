@@ -57,7 +57,7 @@ export const useVoiceStore = defineStore('voice', () => {
         const metadata = parseParticipantMetadata(participant)
         
         let avatarUrl = metadata.avatarUrl || ''
-        let name = metadata.username || participant.name || participant.identity
+        let name = metadata.displayName || metadata.loginName || metadata.username || participant.name || participant.identity
 
         // Fallback cho local participant vì LiveKit metadata có thể chưa sync liền lúc join
         if (isLocal) {
@@ -65,8 +65,8 @@ export const useVoiceStore = defineStore('voice', () => {
             if (!avatarUrl && authStore.user?.avatarUrl) {
                 avatarUrl = authStore.user.avatarUrl
             }
-            if ((!metadata.username || name === participant.identity) && authStore.user?.username) {
-                name = authStore.user.username
+            if ((!metadata.displayName && !metadata.loginName && !metadata.username) || name === participant.identity) {
+                name = authStore.user?.displayName || authStore.user?.profileName || authStore.user?.loginName || authStore.user?.username || name
             }
         }
 
@@ -74,6 +74,7 @@ export const useVoiceStore = defineStore('voice', () => {
             id: participant.identity,
             userId: metadata.userId || participant.identity,
             name: name,
+            displayName: metadata.displayName || name,
             avatarUrl: avatarUrl,
             speaking: participant.isSpeaking,
             isLocal,

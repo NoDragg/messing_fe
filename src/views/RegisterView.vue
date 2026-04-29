@@ -14,6 +14,7 @@ const handleRegister = async () => {
   try {
     await authStore.register({
       username: form.username.trim(),
+      loginName: form.username.trim(),
       email: form.email.trim(),
       password: form.password,
     })
@@ -43,6 +44,7 @@ const handleRegister = async () => {
             class="register-view__input"
             placeholder="your_name"
           />
+          <p class="register-view__hint">Username chỉ dùng để đăng nhập, không hiển thị trong chat.</p>
         </div>
 
         <div>

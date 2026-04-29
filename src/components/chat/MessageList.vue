@@ -93,15 +93,15 @@ const formatTextContent = (text) => {
   })
 }
 
-const getMessageUsername = (message) => {
+const getMessageDisplayName = (message) => {
   const currentUserId = authStore.user?.id
   const msgSenderId = message.senderId || message.userId
 
   if (currentUserId && msgSenderId && currentUserId === msgSenderId) {
-    return authStore.user.username
+    return authStore.user?.displayName || authStore.user?.profileName || authStore.user?.loginName || authStore.user?.username || 'You'
   }
 
-  return message.senderUsername || message.username || 'Unknown'
+  return message.senderDisplayName || message.displayName || message.senderLoginName || message.senderUsername || message.username || 'Unknown'
 }
 
 const getMessageAvatarUrl = (message) => {
@@ -150,12 +150,12 @@ const getMessageAvatarUrl = (message) => {
           class="message-list__avatar-image"
         />
         <div v-else class="message-list__avatar">
-          {{ getMessageUsername(message).charAt(0).toUpperCase() }}
+          {{ getMessageDisplayName(message).charAt(0).toUpperCase() }}
         </div>
 
         <div>
           <div class="message-list__meta">
-            <p class="message-list__sender">{{ getMessageUsername(message) }}</p>
+            <p class="message-list__sender">{{ getMessageDisplayName(message) }}</p>
             <span class="message-list__time">{{ formatTime(message.createdAt) }}</span>
           </div>
           <p

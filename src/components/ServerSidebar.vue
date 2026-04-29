@@ -16,8 +16,9 @@ defineProps({
 
 const emit = defineEmits(['select-server', 'create-server'])
 
+const getDisplayName = (value) => value?.displayName || value?.loginName || value?.username || value?.name || 'Unknown'
 const getServerInitial = (server) => {
-  return (server?.name || 'S').charAt(0).toUpperCase()
+  return getDisplayName(server).charAt(0).toUpperCase()
 }
 </script>
 
@@ -40,12 +41,12 @@ const getServerInitial = (server) => {
           <img
             v-if="server.iconUrl"
             :src="server.iconUrl"
-            :alt="server.name"
+            :alt="getDisplayName(server)"
             class="server-sidebar__server-icon"
           />
           <span v-else>{{ getServerInitial(server) }}</span>
         </button>
-        <div class="server-sidebar__tooltip" role="tooltip">{{ server.name }}</div>
+        <div class="server-sidebar__tooltip" role="tooltip">{{ getDisplayName(server) }}</div>
       </div>
 
       <div class="server-sidebar__divider"></div>

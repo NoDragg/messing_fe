@@ -11,7 +11,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const profileForm = reactive({
-  displayName: authStore.user?.username || '',
+  displayName: authStore.user?.displayName || authStore.user?.profileName || authStore.user?.loginName || authStore.user?.username || '',
   bio: authStore.user?.bio || '',
 })
 
@@ -22,13 +22,14 @@ const passwordForm = reactive({
 })
 
 const avatarPreview = ref(authStore.user?.avatarUrl || '')
+const displayNameText = (user) => user?.displayName || user?.profileName || user?.loginName || user?.username || ''
 const selectedAvatarFile = ref(null)
 const pendingCropFile = ref(null)
 const showCropModal = ref(false)
 const avatarInputRef = ref(null)
 
 const initialProfile = reactive({
-  displayName: authStore.user?.username || '',
+  displayName: displayNameText(authStore.user),
   bio: authStore.user?.bio || '',
   avatarUrl: authStore.user?.avatarUrl || '',
 })
@@ -160,11 +161,11 @@ const handleSaveChanges = async () => {
       selectedAvatarFile.value = null
       avatarPreview.value = updatedUser?.avatarUrl || avatarPreview.value
 
-      initialProfile.displayName = updatedUser?.username || profileForm.displayName.trim()
+      initialProfile.displayName = updatedUser?.displayName || profileForm.displayName.trim()
       initialProfile.bio = updatedUser?.bio || profileForm.bio.trim()
       initialProfile.avatarUrl = updatedUser?.avatarUrl || initialProfile.avatarUrl
 
-      profileForm.displayName = updatedUser?.username || profileForm.displayName.trim()
+      profileForm.displayName = updatedUser?.displayName || profileForm.displayName.trim()
       profileForm.bio = updatedUser?.bio || profileForm.bio.trim()
 
       showToast('Cập nhật hồ sơ thành công.')
@@ -242,7 +243,7 @@ const confirmLogout = async () => {
             class="settings-avatar"
           />
           <div v-else class="settings-avatar settings-avatar--fallback">
-            {{ (profileForm.displayName || authStore.user?.username || 'U').charAt(0).toUpperCase() }}
+            {{ (profileForm.displayName || displayNameText(authStore.user) || 'U').charAt(0).toUpperCase() }}
           </div>
 
           <button type="button" class="settings-secondary-btn" @click="openAvatarPicker">

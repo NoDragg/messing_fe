@@ -41,6 +41,39 @@ export const useAuthStore = defineStore('auth', () => {
     api.defaults.headers.common.Authorization = `Bearer ${payload.token}`
   }
 
+  const normalizeUser = (payload = {}) => {
+    const displayName = payload.displayName?.trim() || ''
+    const username = payload.username?.trim() || ''
+    return {
+      ...payload,
+      username,
+      displayName,
+      profileName: displayName || username,
+    }
+  }
+
+  const syncProfile = async () => {
+    if (!token.value) return null
+
+    try {
+      const response = await api.get('/api/users/me/profile')
+      const profile = response.data || {}
+
+      user.value = normalizeUser({
+        ...(user.value || {}),
+        username: profile.username || user.value?.username || '',
+        displayName: profile.displayName || user.value?.displayName || '',
+        bio: profile.bio || user.value?.bio || '',
+        avatarUrl: profile.avatarUrl || profile.avatar || user.value?.avatarUrl || '',
+      })
+
+      localStorage.setItem('user', JSON.stringify(user.value))
+      return user.value
+    } catch {
+      return null
+    }
+  }
+
   const clearAuthData = () => {
     token.value = ''
     user.value = null
@@ -52,7 +85,7 @@ export const useAuthStore = defineStore('auth', () => {
     delete api.defaults.headers.common.Authorization
   }
 
-  const initAuth = () => {
+  const initAuth = async () => {
     const storedToken = localStorage.getItem('token') || ''
     const storedUser = safeParseUser(localStorage.getItem('user'))
 
@@ -66,6 +99,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     if (storedToken) {
       api.defaults.headers.common.Authorization = `Bearer ${storedToken}`
+      await syncProfile()
     }
   }
 
@@ -81,11 +115,12 @@ export const useAuthStore = defineStore('auth', () => {
 
       setAuthData({
         token: response.data.token,
-        user: {
+        user: normalizeUser({
           id: response.data.userId,
           username: response.data.username,
+          displayName: response.data.displayName,
           email: response.data.email,
-        },
+        }),
       })
 
       return response.data
@@ -141,12 +176,13 @@ export const useAuthStore = defineStore('auth', () => {
         avatarUrl = avatarResponse.data?.avatarUrl || avatarResponse.data?.url || avatarUrl
       }
 
-      user.value = {
+      user.value = normalizeUser({
         ...(user.value || {}),
-        username: profileResponse.data?.displayName ?? nextDisplayName,
+        username: profileResponse.data?.username ?? user.value?.username ?? '',
+        displayName: profileResponse.data?.displayName ?? nextDisplayName,
         bio: profileResponse.data?.bio ?? nextBio,
-        avatarUrl,
-      }
+        avatarUrl: profileResponse.data?.avatarUrl || avatarUrl,
+      })
 
       localStorage.setItem('user', JSON.stringify(user.value))
 
@@ -202,6 +238,7 @@ export const useAuthStore = defineStore('auth', () => {
     register,
     updateProfile,
     changePassword,
+    syncProfile,
     logout,
     initAuth,
     ensureValidSession,

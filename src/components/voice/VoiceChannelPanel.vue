@@ -34,6 +34,7 @@ const emit = defineEmits(['toggle-mute', 'toggle-deafen', 'leave'])
 const participantItems = computed(() => props.participants || [])
 const participantCount = computed(() => participantItems.value.length)
 
+const getDisplayName = (user) => user?.displayName || user?.profileName || user?.loginName || user?.name || user?.username || 'Unknown'
 const initial = (name) => (name || 'U').charAt(0).toUpperCase()
 </script>
 
@@ -68,17 +69,17 @@ const initial = (name) => (name || 'U').charAt(0).toUpperCase()
           <img
             v-if="user.avatarUrl"
             :src="user.avatarUrl"
-            :alt="user.name || user.username || 'Avatar'"
+            :alt="getDisplayName(user) || 'Avatar'"
             class="voice-panel__avatar-image"
           />
           <div v-else class="voice-panel__avatar-fallback">
-            {{ initial(user.name || user.username) }}
+            {{ initial(getDisplayName(user)) }}
           </div>
         </div>
 
         <div class="voice-panel__meta">
           <p class="voice-panel__username">
-            {{ user.name || user.username || 'Unknown' }}
+            {{ getDisplayName(user) }}
             <span v-if="currentUser?.id === user.id" class="voice-panel__you">(Bạn)</span>
           </p>
           <p class="voice-panel__status">

@@ -40,6 +40,8 @@ const emit = defineEmits(['select-channel', 'rename-channel', 'delete-channel', 
 const serverStore = useServerStore()
 const { showToast } = useToast()
 
+const getDisplayName = (user) => user?.displayName || user?.profileName || user?.loginName || user?.username || 'Guest'
+
 const handleInviteUser = async () => {
   if (!serverStore.activeServerId) {
     showToast('Bạn cần chọn server trước khi tạo lời mời.', 'error')
@@ -169,10 +171,10 @@ const handleInviteUser = async () => {
           class="channel-sidebar__avatar-image"
         />
         <div v-else class="channel-sidebar__avatar">
-          {{ (currentUser?.username || 'G').charAt(0).toUpperCase() }}
+          {{ (getDisplayName(currentUser) || 'G').charAt(0).toUpperCase() }}
         </div>
         <div class="channel-sidebar__user-name-wrap">
-          <p class="channel-sidebar__user-name">{{ currentUser?.username || 'Guest' }}</p>
+          <p class="channel-sidebar__user-name">{{ getDisplayName(currentUser) }}</p>
         </div>
       </div>
 
