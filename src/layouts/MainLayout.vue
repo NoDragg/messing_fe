@@ -60,14 +60,11 @@ const {
   handleLogout,
 } = useMainLayout()
 
-// ── Desktop: channel sidebar collapse ────────────────────────────
 const channelSidebarCollapsed = ref(false)
 const toggleChannelSidebar = () => {
   channelSidebarCollapsed.value = !channelSidebarCollapsed.value
 }
 
-// ── Mobile: bottom tab navigation ────────────────────────────────
-// Tabs: 'servers' | 'channels' | 'chat'
 const activeMobileTab = ref('servers')
 
 const onSelectServer = (id) => {
@@ -113,7 +110,6 @@ const onMobileBack = () => {
       @logout="handleLogout"
     />
 
-    <!-- Voice Channel Panel -->
     <VoiceChannelPanel
       v-if="isCurrentChannelVoice"
       :channel="selectedChannel"
@@ -121,14 +117,33 @@ const onMobileBack = () => {
       :participants="voiceStore.participants"
       :muted="voiceStore.muted"
       :deafened="voiceStore.deafened"
+      :screen-sharing="voiceStore.screenSharing"
+      :remote-screen-elements="voiceStore.remoteScreenElements"
+      :latest-channel-state="voiceStore.latestChannelState"
+      :active-screen-track-sid="voiceStore.selectedScreenTrackSid"
       :active-speaker-id="voiceStore.activeSpeakerId"
       class="main-layout__chat-area"
       @toggle-mute="voiceStore.toggleMute"
       @toggle-deafen="voiceStore.toggleDeafen"
+      @toggle-screen-share="async () => {
+        try {
+          const localScreenPublication = voiceStore.room?.localParticipant
+            ? Array.from(voiceStore.room.localParticipant.trackPublications.values())
+                .find((publication) => publication.track?.source === 'screen_share' || publication.track?.source === 'screenShare' || publication.track?.source === 'screen_share')
+            : null
+          if (voiceStore.screenSharing || localScreenPublication) {
+            await voiceStore.stopScreenShare()
+          } else {
+            await voiceStore.startScreenShare()
+          }
+        } catch (error) {
+          console.error('[MainLayout] screen share toggle failed', error)
+        }
+      }"
+      @select-user-stream="voiceStore.selectUserStream"
       @leave="handleLeaveVoiceChannel"
     />
 
-    <!-- Text Chat Window -->
     <ChatWindow
       v-else
       :channel-name="currentChannelName"
@@ -152,232 +167,54 @@ const onMobileBack = () => {
       @back="onMobileBack"
     />
 
-    <!-- Mobile bottom tab bar -->
     <nav class="main-layout__bottom-nav">
-      <button
-        type="button"
-        class="main-layout__tab-btn"
-        :class="{ 'main-layout__tab-btn--active': activeMobileTab === 'servers' }"
-        @click="activeMobileTab = 'servers'"
-      >
+      <button type="button" class="main-layout__tab-btn" :class="{ 'main-layout__tab-btn--active': activeMobileTab === 'servers' }" @click="activeMobileTab = 'servers'">
         <Server :size="20" />
         <span>Servers</span>
       </button>
-      <button
-        type="button"
-        class="main-layout__tab-btn"
-        :class="{ 'main-layout__tab-btn--active': activeMobileTab === 'channels' }"
-        @click="activeMobileTab = 'channels'"
-      >
+      <button type="button" class="main-layout__tab-btn" :class="{ 'main-layout__tab-btn--active': activeMobileTab === 'channels' }" @click="activeMobileTab = 'channels'">
         <Hash :size="20" />
         <span>Kênh</span>
       </button>
-      <button
-        type="button"
-        class="main-layout__tab-btn"
-        :class="{ 'main-layout__tab-btn--active': activeMobileTab === 'chat' }"
-        @click="activeMobileTab = 'chat'"
-      >
+      <button type="button" class="main-layout__tab-btn" :class="{ 'main-layout__tab-btn--active': activeMobileTab === 'chat' }" @click="activeMobileTab = 'chat'">
         <MessageSquare :size="20" />
         <span>Chat</span>
       </button>
     </nav>
 
-    <CreateServerModal
-      v-model:show="showCreateServerModal"
-      @created="handleServerCreated"
-    />
-
-    <CreateChannelModal
-      v-model:show="showCreateChannelModal"
-      @created="handleChannelCreated"
-    />
-
-    <RenameChannelModal
-      v-model:show="showRenameChannelModal"
-      :channel="targetChannel"
-    />
-
-    <DeleteChannelModal
-      v-model:show="showDeleteChannelModal"
-      :channel="targetChannel"
-      @deleted="handleChannelDeleted"
-    />
-
-    <EditServerModal
-      v-model:show="showEditServerModal"
-      :server="serverStore.activeServer"
-      @updated="handleServerUpdated"
-    />
-
-    <DeleteServerModal
-      v-model:show="showDeleteServerModal"
-      @deleted="handleServerDeleted"
-    />
+    <CreateServerModal v-model:show="showCreateServerModal" @created="handleServerCreated" />
+    <CreateChannelModal v-model:show="showCreateChannelModal" @created="handleChannelCreated" />
+    <RenameChannelModal v-model:show="showRenameChannelModal" :channel="targetChannel" />
+    <DeleteChannelModal v-model:show="showDeleteChannelModal" :channel="targetChannel" @deleted="handleChannelDeleted" />
+    <EditServerModal v-model:show="showEditServerModal" :server="serverStore.activeServer" @updated="handleServerUpdated" />
+    <DeleteServerModal v-model:show="showDeleteServerModal" @deleted="handleServerDeleted" />
   </div>
 </template>
 
 <style scoped>
-.main-layout {
-  display: flex;
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden;
-  position: relative;
-  color: rgb(243 244 246);
-  background:
-    radial-gradient(circle at top, rgba(124, 140, 255, 0.08), transparent 22%),
-    linear-gradient(180deg, rgba(9, 13, 24, 0.98), rgba(5, 8, 22, 0.98));
-  animation: ui-fade-in 280ms ease;
-}
-
-.main-layout > * {
-  animation: ui-fade-up 280ms ease both;
-}
-
-/* ── Mobile bottom navigation bar ─────────────────────────────── */
-.main-layout__bottom-nav {
-  display: none;
-}
-
+.main-layout { display: flex; height: 100vh; width: 100vw; overflow: hidden; position: relative; color: rgb(243 244 246); background: radial-gradient(circle at top, rgba(124, 140, 255, 0.08), transparent 22%), linear-gradient(180deg, rgba(9, 13, 24, 0.98), rgba(5, 8, 22, 0.98)); animation: ui-fade-in 280ms ease; }
+.main-layout > * { animation: ui-fade-up 280ms ease both; }
+.main-layout__bottom-nav { display: none; }
 @media (max-width: 768px) {
-  .main-layout {
-    flex-direction: column;
-    padding-bottom: 64px; /* room for bottom nav */
-  }
-
-  /* On mobile: all three panels stack in a row inside a "slides" wrapper */
+  .main-layout { flex-direction: column; padding-bottom: 64px; }
   .main-layout__server-sidebar,
   .main-layout__channel-sidebar,
-  .main-layout__chat-area {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: calc(100% - 64px);
-    transition: opacity 220ms ease, transform 220ms ease;
-    will-change: transform, opacity;
-  }
-
-  /* servers tab */
-  .main-layout--tab-servers .main-layout__server-sidebar {
-    opacity: 1;
-    transform: translateX(0);
-    pointer-events: auto;
-    z-index: 10;
-  }
-  .main-layout--tab-servers .main-layout__channel-sidebar {
-    opacity: 0;
-    transform: translateX(100%);
-    pointer-events: none;
-    z-index: 5;
-  }
-  .main-layout--tab-servers .main-layout__chat-area {
-    opacity: 0;
-    transform: translateX(100%);
-    pointer-events: none;
-    z-index: 5;
-  }
-
-  /* channels tab */
-  .main-layout--tab-channels .main-layout__server-sidebar {
-    opacity: 0;
-    transform: translateX(-100%);
-    pointer-events: none;
-    z-index: 5;
-  }
-  .main-layout--tab-channels .main-layout__channel-sidebar {
-    opacity: 1;
-    transform: translateX(0);
-    pointer-events: auto;
-    z-index: 10;
-    width: 100% !important;
-  }
-  .main-layout--tab-channels .main-layout__chat-area {
-    opacity: 0;
-    transform: translateX(100%);
-    pointer-events: none;
-    z-index: 5;
-  }
-
-  /* chat tab */
-  .main-layout--tab-chat .main-layout__server-sidebar {
-    opacity: 0;
-    transform: translateX(-100%);
-    pointer-events: none;
-    z-index: 5;
-  }
-  .main-layout--tab-chat .main-layout__channel-sidebar {
-    opacity: 0;
-    transform: translateX(-100%);
-    pointer-events: none;
-    z-index: 5;
-  }
-  .main-layout--tab-chat .main-layout__chat-area {
-    opacity: 1;
-    transform: translateX(0);
-    pointer-events: auto;
-    z-index: 10;
-  }
-
-  /* ChannelSidebar: override collapsed width on mobile */
-  .main-layout__channel-sidebar {
-    width: 100% !important;
-    border-right: none;
-  }
-
-  /* ServerSidebar: expand full width on mobile */
-  .main-layout__server-sidebar {
-    width: 100%;
-    border-right: none;
-    padding: 16px;
-  }
-
-  /* Bottom navigation bar */
-  .main-layout__bottom-nav {
-    display: flex;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 64px;
-    z-index: 50;
-    background: rgba(8, 11, 20, 0.96);
-    border-top: 1px solid rgba(129, 140, 248, 0.14);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-  }
+  .main-layout__chat-area { position: absolute; top: 0; left: 0; width: 100%; height: calc(100% - 64px); transition: opacity 220ms ease, transform 220ms ease; will-change: transform, opacity; }
+  .main-layout--tab-servers .main-layout__server-sidebar { opacity: 1; transform: translateX(0); pointer-events: auto; z-index: 10; }
+  .main-layout--tab-servers .main-layout__channel-sidebar,
+  .main-layout--tab-servers .main-layout__chat-area { opacity: 0; transform: translateX(100%); pointer-events: none; z-index: 5; }
+  .main-layout--tab-channels .main-layout__server-sidebar { opacity: 0; transform: translateX(-100%); pointer-events: none; z-index: 5; }
+  .main-layout--tab-channels .main-layout__channel-sidebar { opacity: 1; transform: translateX(0); pointer-events: auto; z-index: 10; width: 100% !important; }
+  .main-layout--tab-channels .main-layout__chat-area { opacity: 0; transform: translateX(100%); pointer-events: none; z-index: 5; }
+  .main-layout--tab-chat .main-layout__server-sidebar,
+  .main-layout--tab-chat .main-layout__channel-sidebar { opacity: 0; transform: translateX(-100%); pointer-events: none; z-index: 5; }
+  .main-layout--tab-chat .main-layout__chat-area { opacity: 1; transform: translateX(0); pointer-events: auto; z-index: 10; }
+  .main-layout__channel-sidebar { width: 100% !important; border-right: none; }
+  .main-layout__server-sidebar { width: 100%; border-right: none; padding: 16px; }
+  .main-layout__bottom-nav { display: flex; position: fixed; bottom: 0; left: 0; right: 0; height: 64px; z-index: 50; background: rgba(8, 11, 20, 0.96); border-top: 1px solid rgba(129, 140, 248, 0.14); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
 }
-
-.main-layout__tab-btn {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  border: none;
-  background: transparent;
-  color: #6b7a9e;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 8px 4px;
-  transition:
-    color 180ms ease,
-    background-color 180ms ease;
-  letter-spacing: 0.02em;
-}
-
-.main-layout__tab-btn:active {
-  background: rgba(124, 140, 255, 0.08);
-}
-
-.main-layout__tab-btn--active {
-  color: #a5b4fc;
-}
-
-.main-layout__tab-btn--active svg {
-  filter: drop-shadow(0 0 6px rgba(124, 140, 255, 0.5));
-}
+.main-layout__tab-btn { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: none; background: transparent; color: #6b7a9e; font-size: 11px; font-weight: 600; cursor: pointer; padding: 8px 4px; transition: color 180ms ease, background-color 180ms ease; letter-spacing: 0.02em; }
+.main-layout__tab-btn:active { background: rgba(124, 140, 255, 0.08); }
+.main-layout__tab-btn--active { color: #a5b4fc; }
+.main-layout__tab-btn--active svg { filter: drop-shadow(0 0 6px rgba(124, 140, 255, 0.5)); }
 </style>

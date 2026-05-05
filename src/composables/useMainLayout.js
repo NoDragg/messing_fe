@@ -44,7 +44,7 @@ export const useMainLayout = () => {
 
     const currentUser = computed(() => authStore.user || {
         displayName: 'Guest',
-      loginName: 'Guest'
+        loginName: 'Guest'
     })
     const servers = computed(() => serverStore.servers)
     const channels = computed(() => serverStore.channels)
