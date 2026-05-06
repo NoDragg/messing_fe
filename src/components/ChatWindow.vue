@@ -24,6 +24,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  botTyping: {
+    type: Boolean,
+    default: false,
+  },
   // Voice props
   isInVoice: {
     type: Boolean,
@@ -124,6 +128,7 @@ const emit = defineEmits(['send-message', 'send-image', 'voice-mute', 'voice-dea
       :channel-name="channelName"
       :bot-mode="botMode"
       :bot-busy="botBusy"
+      :bot-typing="botTyping"
       @send-message="emit('send-message', $event)"
       @send-image="emit('send-image', $event)"
       @toggle-bot-mode="emit('toggle-bot-mode')"
@@ -285,4 +290,5 @@ const emit = defineEmits(['send-message', 'send-image', 'voice-mute', 'voice-dea
     transform: translateY(0);
   }
 }
+
 </style>

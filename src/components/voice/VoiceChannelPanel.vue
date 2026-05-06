@@ -71,7 +71,6 @@ const onUserCardClick = (user) => {
     screenShareTrackSid: trackSid,
   });
 };
-
 </script>
 
 <template>

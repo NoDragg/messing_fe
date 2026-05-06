@@ -25,6 +25,7 @@ export const useVoiceStore = defineStore('voice', () => {
 
     const isInVoiceChannel = computed(() => Boolean(room.value && room.value.state === 'connected'))
     const voiceParticipantCount = computed(() => participants.value.length)
+
     const activeScreenShareParticipants = computed(() => {
         const serverParticipants = latestChannelState.value?.participants || []
         return serverParticipants
@@ -44,6 +45,7 @@ export const useVoiceStore = defineStore('voice', () => {
         })
         elementsRef.value = {}
     }
+
     const cleanupRemoteAudioElements = () => cleanupMediaElements(remoteAudioElements)
     const cleanupRemoteScreenElements = () => cleanupMediaElements(remoteScreenElements)
 
@@ -115,7 +117,12 @@ export const useVoiceStore = defineStore('voice', () => {
     }
 
     const detachRemoteAudio = (track, participantIdentity) => {
-        try { track?.detach()?.forEach((element) => { try { element.pause() } catch { /* noop */ } try { element.remove() } catch { /* noop */ } }) } catch { /* noop */ }
+        try {
+            track?.detach()?.forEach((element) => {
+                try { element.pause() } catch { /* noop */ }
+                try { element.remove() } catch { /* noop */ }
+            })
+        } catch { /* noop */ }
         const audioElement = remoteAudioElements.value[participantIdentity]
         if (audioElement) { try { audioElement.remove() } catch { /* noop */ } }
         const { [participantIdentity]: _, ...rest } = remoteAudioElements.value
@@ -124,10 +131,7 @@ export const useVoiceStore = defineStore('voice', () => {
 
     const screenKey = (participantIdentity, trackSid) => `${participantIdentity}:${trackSid || 'screen'}`
 
-    const resolveScreenSource = (publication) => {
-        const source = publication?.source || publication?.track?.source || Track.Source.ScreenShare
-        return source
-    }
+    const resolveScreenSource = (publication) => publication?.source || publication?.track?.source || Track.Source.ScreenShare
 
     const attachScreenElement = (track, participant, publication, { local = false } = {}) => {
         const trackSid = publication?.trackSid || track?.sid || ''
@@ -163,15 +167,43 @@ export const useVoiceStore = defineStore('voice', () => {
         remoteScreenElements.value = { ...remoteScreenElements.value, [key]: videoElement }
     }
 
+    const getFirstRemoteScreenTrackSid = () => {
+        const entries = Object.entries(remoteScreenElements.value)
+        const firstEntry = entries.find(([, element]) => Boolean(element))
+        return firstEntry ? (firstEntry[1]?.dataset?.trackSid || firstEntry[0] || null) : null
+    }
+
+    const getFirstActiveScreenShareTrackSid = () => activeScreenShareParticipants.value.find((participant) => participant.trackSid)?.trackSid || null
+
+    const resolveScreenElementByTrackSid = (trackSid) => {
+        if (!trackSid) return null
+        return remoteScreenElements.value[trackSid]
+            || Object.values(remoteScreenElements.value).find((element) => {
+                const elementTrackSid = element?.dataset?.trackSid || ''
+                const participantId = element?.dataset?.participantId || ''
+                return elementTrackSid === trackSid || participantId === trackSid
+            })
+            || Object.entries(remoteScreenElements.value).find(([key, element]) => {
+                const elementTrackSid = element?.dataset?.trackSid || ''
+                const participantId = element?.dataset?.participantId || ''
+                return key === trackSid || elementTrackSid === trackSid || participantId === trackSid
+            })?.[1]
+            || null
+    }
+
     const detachRemoteScreen = (track, participantIdentity, publication) => {
         const trackSid = publication?.trackSid || track?.sid || ''
         const key = screenKey(participantIdentity, trackSid)
-        try { track?.detach()?.forEach((element) => { try { element.remove() } catch { /* noop */ } }) } catch { /* noop */ }
+        try {
+            track?.detach()?.forEach((element) => {
+                try { element.remove() } catch { /* noop */ }
+            })
+        } catch { /* noop */ }
         const videoElement = remoteScreenElements.value[key]
         if (videoElement) { try { videoElement.remove() } catch { /* noop */ } }
         const { [key]: removedElement, ...rest } = remoteScreenElements.value
         remoteScreenElements.value = rest
-        const remainingTrackSid = getFirstRemoteScreenTrackSid()
+        const remainingTrackSid = getFirstActiveScreenShareTrackSid() || getFirstRemoteScreenTrackSid()
         const removedWasSelected = selectedScreenTrackSid.value === trackSid || selectedScreenTrackSid.value === key || removedElement?.dataset?.trackSid === selectedScreenTrackSid.value
         const removedWasPinned = pinnedScreenTrackSid.value === trackSid || pinnedScreenTrackSid.value === key || removedElement?.dataset?.trackSid === pinnedScreenTrackSid.value
         if (removedWasSelected || removedWasPinned) {
@@ -257,14 +289,10 @@ export const useVoiceStore = defineStore('voice', () => {
         let publication = null
 
         try {
-            // Step A: getDisplayMedia / lấy screen track
             mediaStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true })
             ;[videoTrack] = mediaStream.getVideoTracks()
-            if (!videoTrack) {
-                throw new Error('No screen share track available')
-            }
+            if (!videoTrack) throw new Error('No screen share track available')
 
-            // Step B: publish track lên LiveKit
             publication = await room.value.localParticipant.publishTrack(videoTrack, { name: 'screen-share', source: Track.Source.ScreenShare })
             attachScreenElement(publication?.track || videoTrack, room.value.localParticipant, publication, { local: true })
 
@@ -274,7 +302,6 @@ export const useVoiceStore = defineStore('voice', () => {
             videoTrack.addEventListener('ended', async () => { await stopScreenShare(false) })
 
             await toggleScreenShareOnServer(true, publication?.trackSid || null, screenShareSource.value)
-
             return publication
         } catch (error) {
             if (videoTrack) {
@@ -323,29 +350,15 @@ export const useVoiceStore = defineStore('voice', () => {
         if (notifyServer) await toggleScreenShareOnServer(false, null, '')
     }
 
-    const getScreenElementTrackSid = (element, key = '') => element?.dataset?.trackSid || key || null
-    const getFirstRemoteScreenTrackSid = () => {
-        const entries = Object.entries(remoteScreenElements.value)
-        const lastEntry = [...entries].reverse().find(([, element]) => Boolean(element))
-        return lastEntry ? getScreenElementTrackSid(lastEntry[1], lastEntry[0]) : null
-    }
-
-    const getFirstActiveScreenShareTrackSid = () => {
-        const participants = [...activeScreenShareParticipants.value]
-        return participants.reverse().find((participant) => participant.trackSid)?.trackSid || null
-    }
-
     const setActiveScreenTrackSid = (trackSid) => {
         const nextTrackSid = trackSid || getFirstActiveScreenShareTrackSid() || getFirstRemoteScreenTrackSid()
         selectedScreenTrackSid.value = nextTrackSid
         pinnedScreenTrackSid.value = nextTrackSid
     }
-    const setPinnedScreenTrackSid = (trackSid) => {
-        setActiveScreenTrackSid(trackSid)
-    }
-    const togglePinnedScreenTrackSid = (trackSid) => {
-        setActiveScreenTrackSid(trackSid)
-    }
+
+    const setPinnedScreenTrackSid = (trackSid) => { setActiveScreenTrackSid(trackSid) }
+    const togglePinnedScreenTrackSid = (trackSid) => { setActiveScreenTrackSid(trackSid) }
+
     const selectUserStream = (target) => {
         if (!target) return
         if (typeof target === 'object') {
@@ -354,21 +367,6 @@ export const useVoiceStore = defineStore('voice', () => {
             return
         }
         setActiveScreenTrackSid(target)
-    }
-    const resolveScreenElementByTrackSid = (trackSid) => {
-        if (!trackSid) return null
-        return remoteScreenElements.value[trackSid]
-            || Object.values(remoteScreenElements.value).find((element) => {
-                const elementTrackSid = element?.dataset?.trackSid || ''
-                const participantId = element?.dataset?.participantId || ''
-                return elementTrackSid === trackSid || participantId === trackSid
-            })
-            || Object.entries(remoteScreenElements.value).find(([key, element]) => {
-                const elementTrackSid = element?.dataset?.trackSid || ''
-                const participantId = element?.dataset?.participantId || ''
-                return key === trackSid || elementTrackSid === trackSid || participantId === trackSid
-            })?.[1]
-            || null
     }
 
     const activePinnedScreenElement = computed(() => {
@@ -380,8 +378,7 @@ export const useVoiceStore = defineStore('voice', () => {
         (trackSids) => {
             const currentTrackSid = selectedScreenTrackSid.value || pinnedScreenTrackSid.value
             if (currentTrackSid && trackSids.includes(currentTrackSid)) return
-
-            const fallbackTrackSid = getFirstActiveScreenShareTrackSid() || getFirstRemoteScreenTrackSid()
+            const fallbackTrackSid = trackSids[0] || getFirstRemoteScreenTrackSid()
             if (fallbackTrackSid) {
                 selectedScreenTrackSid.value = fallbackTrackSid
                 pinnedScreenTrackSid.value = fallbackTrackSid
@@ -393,18 +390,66 @@ export const useVoiceStore = defineStore('voice', () => {
     const leaveVoiceChannel = async () => {
         const channelId = activeVoiceChannelId.value
         const sessionId = activeSessionId.value
-        if (channelId && sessionId) { try { const { data } = await api.post('/api/voice/leave', { channelId, sessionId }); latestChannelState.value = data || null } catch { /* noop */ } }
-        cleanupRemoteAudioElements(); cleanupRemoteScreenElements()
-        if (room.value) { try { await room.value.disconnect() } catch { /* noop */ } }
-        room.value = null; participants.value = []; activeVoiceChannelId.value = null; activeVoiceChannelName.value = ''; activeSessionId.value = null; muted.value = false; deafened.value = false; screenSharing.value = false; screenShareTrack.value = null; screenShareSource.value = ''; lastError.value = ''; pinnedScreenTrackSid.value = null; selectedScreenTrackSid.value = null
+        if (channelId && sessionId) {
+            try {
+                const { data } = await api.post('/api/voice/leave', { channelId, sessionId })
+                latestChannelState.value = data || null
+            } catch { /* noop */ }
+        }
+        cleanupRemoteAudioElements()
+        cleanupRemoteScreenElements()
+        if (room.value) {
+            try { await room.value.disconnect() } catch { /* noop */ }
+        }
+        room.value = null
+        participants.value = []
+        activeVoiceChannelId.value = null
+        activeVoiceChannelName.value = ''
+        activeSessionId.value = null
+        muted.value = false
+        deafened.value = false
+        screenSharing.value = false
+        screenShareTrack.value = null
+        screenShareSource.value = ''
+        lastError.value = ''
+        pinnedScreenTrackSid.value = null
+        selectedScreenTrackSid.value = null
     }
 
-    const reset = async () => { await leaveVoiceChannel(); latestChannelState.value = null }
+    const reset = async () => {
+        await leaveVoiceChannel()
+        latestChannelState.value = null
+    }
 
     return {
-        activeVoiceChannelId, activeVoiceChannelName, room, participants, muted, deafened, screenSharing, screenShareSource, remoteScreenElements, latestChannelState, pinnedScreenTrackSid, selectedScreenTrackSid, activePinnedScreenElement,
-        isInVoiceChannel, voiceParticipantCount,
-        activeSpeakerId: computed(() => participants.value.find(p => p.speaking && !p.isLocal)?.id || null),
-        joinVoiceChannel, leaveVoiceChannel, toggleMute, toggleDeafen, syncVoiceState, toggleMicOnServer, toggleScreenShareOnServer, startScreenShare, stopScreenShare, reset, togglePinnedScreenTrackSid, setPinnedScreenTrackSid, selectUserStream,
+        activeVoiceChannelId,
+        activeVoiceChannelName,
+        room,
+        participants,
+        muted,
+        deafened,
+        screenSharing,
+        screenShareSource,
+        remoteScreenElements,
+        latestChannelState,
+        pinnedScreenTrackSid,
+        selectedScreenTrackSid,
+        activePinnedScreenElement,
+        isInVoiceChannel,
+        voiceParticipantCount,
+        activeSpeakerId: computed(() => participants.value.find((p) => p.speaking && !p.isLocal)?.id || null),
+        joinVoiceChannel,
+        leaveVoiceChannel,
+        toggleMute,
+        toggleDeafen,
+        syncVoiceState,
+        toggleMicOnServer,
+        toggleScreenShareOnServer,
+        startScreenShare,
+        stopScreenShare,
+        reset,
+        togglePinnedScreenTrackSid,
+        setPinnedScreenTrackSid,
+        selectUserStream,
     }
 })

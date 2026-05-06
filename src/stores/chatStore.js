@@ -17,8 +17,8 @@ export const useChatStore = defineStore('chat', () => {
   const error = ref('')
   const requestToken = ref(0)
   const botBusy = ref(false)
+  const botTyping = ref(false)
   const botMode = ref(false)
-  const botPlaceholderId = ref(null)
   const botRequestAbort = ref(null)
   let runtimeConfigPromise = null
 
@@ -79,9 +79,7 @@ export const useChatStore = defineStore('chat', () => {
 
     const client = new Client({
       webSocketFactory: () => new SockJS(wsUrl),
-      connectHeaders: {
-        Authorization: `Bearer ${token}`,
-      },
+      connectHeaders: { Authorization: `Bearer ${token}` },
       debug: () => {},
       reconnectDelay: 5000,
       heartbeatIncoming: 10000,
@@ -122,6 +120,8 @@ export const useChatStore = defineStore('chat', () => {
     activeSubscription.value = stompClient.value.subscribe(`/topic/channels/${channelId}`, (payload) => {
       const message = JSON.parse(payload.body)
 
+      removePendingMessage(channelId, message)
+
       const duplicateIndex = messages.value.findIndex((existing) => existing.id === message.id)
       if (duplicateIndex !== -1) {
         messages.value.splice(duplicateIndex, 1, message)
@@ -134,10 +134,11 @@ export const useChatStore = defineStore('chat', () => {
 
   const addPendingMessage = (channelId, content) => {
     const currentUser = authStore.user || {}
+    const trimmedContent = content.trim()
     const pendingMessage = {
       id: `pending-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
       channelId,
-      content: content.trim(),
+      content: trimmedContent,
       type: 'TEXT',
       createdAt: new Date().toISOString(),
       senderId: currentUser.id || '__pending__',
@@ -150,100 +151,40 @@ export const useChatStore = defineStore('chat', () => {
     return pendingMessage
   }
 
-  const normalizeBotStreamChunk = (chunk) => {
-    if (chunk == null) return ''
-    if (typeof chunk === 'string') return chunk
-    if (typeof chunk?.content === 'string') return chunk.content
-    if (typeof chunk?.delta === 'string') return chunk.delta
-    if (typeof chunk?.text === 'string') return chunk.text
-    if (typeof chunk?.data === 'string') return chunk.data
-    return ''
-  }
+  const removePendingMessage = (channelId, message) => {
+    if (!channelId || !message) return null
 
-  const upsertBotPlaceholder = (channelId, question) => {
-    const placeholderId = `bot-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
-    const botMessage = {
-      id: placeholderId,
-      channelId,
-      content: question,
-      type: 'TEXT',
-      createdAt: new Date().toISOString(),
-      senderId: 'bot',
-      senderUsername: 'Bot',
-      senderDisplayName: 'Bot',
-      senderAvatarUrl: null,
-      bot: true,
-      streaming: true,
-      pending: true,
-    }
+    const normalizedIncomingContent = (message.content || '').trim()
+    const normalizedIncomingSenderId = message.senderId || message.userId || message.sender?.id || null
+    const normalizedIncomingSenderName = message.senderUsername || message.senderDisplayName || message.sender?.username || message.sender?.displayName || null
+    const currentUser = authStore.user || {}
+    const currentUserId = currentUser.id || null
+    const currentUserName = currentUser.loginName || currentUser.username || null
 
-    messages.value.push(botMessage)
-    botPlaceholderId.value = placeholderId
-    return botMessage
-  }
+    const pendingIndex = messages.value.findIndex((existing) => {
+      if (!existing.pending) return false
+      if (existing.channelId !== channelId) return false
+      if ((existing.content || '').trim() !== normalizedIncomingContent) return false
 
-  const updateBotPlaceholder = (messageId, patch = {}) => {
-    const index = messages.value.findIndex((message) => message.id === messageId)
-    if (index === -1) return null
+      const existingSenderId = existing.senderId || null
+      const existingSenderName = existing.senderUsername || existing.senderDisplayName || null
 
-    messages.value[index] = {
-      ...messages.value[index],
-      ...patch,
-    }
+      if (currentUserId && existingSenderId && existingSenderId === currentUserId) return true
+      if (currentUserName && existingSenderName && existingSenderName === currentUserName) return true
+      if (normalizedIncomingSenderId && existingSenderId && existingSenderId === normalizedIncomingSenderId) return true
+      if (normalizedIncomingSenderName && existingSenderName && existingSenderName === normalizedIncomingSenderName) return true
 
-    return messages.value[index]
-  }
-
-  const appendBotChunk = (chunk) => {
-    if (!botPlaceholderId.value) return null
-    const text = normalizeBotStreamChunk(chunk)
-    if (!text) return null
-
-    const current = messages.value.find((message) => message.id === botPlaceholderId.value)
-    if (!current) return null
-
-    return updateBotPlaceholder(botPlaceholderId.value, {
-      content: `${current.content || ''}${text}`,
-      pending: false,
-      streaming: true,
-    })
-  }
-
-  const finalizeBotMessage = (messageId, { content, errorMessage } = {}) => {
-    if (!messageId) return null
-    const patch = {
-      pending: false,
-      streaming: false,
-    }
-    if (typeof content === 'string') patch.content = content
-    if (errorMessage) {
-      patch.error = true
-      patch.content = errorMessage
-    }
-    const updated = updateBotPlaceholder(messageId, patch)
-    if (botPlaceholderId.value === messageId) {
-      botPlaceholderId.value = null
-    }
-    botBusy.value = false
-    botRequestAbort.value = null
-    return updated
-  }
-
-  const sendMessage = (channelId, content) => {
-    if (!stompClient.value || !isConnected.value || !channelId || !content?.trim()) {
       return false
-    }
-
-    addPendingMessage(channelId, content)
-
-    stompClient.value.publish({
-      destination: `/app/chat/${channelId}/sendMessage`,
-      body: JSON.stringify({
-        content: content.trim(),
-      }),
     })
 
-    return true
+    if (pendingIndex === -1) return null
+
+    const [removed] = messages.value.splice(pendingIndex, 1)
+    return removed
+  }
+
+  const setBotTyping = (value) => {
+    botTyping.value = Boolean(value)
   }
 
   const isBotCommand = (content) => {
@@ -265,44 +206,60 @@ export const useChatStore = defineStore('chat', () => {
     botRequestAbort.value?.abort?.()
     botRequestAbort.value = null
     botBusy.value = false
+    botTyping.value = false
+  }
+
+  const sendMessage = (channelId, content) => {
+    if (!stompClient.value || !isConnected.value || !channelId || !content?.trim()) {
+      return false
+    }
+
+    addPendingMessage(channelId, content)
+
+    stompClient.value.publish({
+      destination: `/app/chat/${channelId}/sendMessage`,
+      body: JSON.stringify({ content: content.trim() }),
+    })
+
+    return true
   }
 
   const sendBotMessage = async (channelId, content) => {
     if (!channelId || !content?.trim()) {
-      return {
-        ok: false,
-        error: 'empty',
-      }
+      return { ok: false, error: 'empty' }
     }
 
-    const question = extractBotQuestion(content)
-    if (question === '' && isBotCommand(content)) {
-      return {
-        ok: false,
-        error: 'missing_question',
-      }
+    const trimmed = content.trim()
+    const question = extractBotQuestion(trimmed)
+    if (question === '' && isBotCommand(trimmed)) {
+      return { ok: false, error: 'missing_question' }
     }
 
     if (!question) {
-      return {
-        ok: false,
-        error: 'not_bot',
-      }
+      return { ok: false, error: 'not_bot' }
+    }
+
+    if (!stompClient.value || !isConnected.value) {
+      return { ok: false, error: 'disconnected' }
     }
 
     if (botBusy.value) {
-      return {
-        ok: false,
-        error: 'busy',
-      }
+      return { ok: false, error: 'busy' }
     }
 
-    const placeholder = upsertBotPlaceholder(channelId, '')
+    const pendingMessage = addPendingMessage(channelId, trimmed)
     botBusy.value = true
+    botTyping.value = true
+
     const controller = new AbortController()
     botRequestAbort.value = controller
 
     try {
+      stompClient.value.publish({
+        destination: `/app/chat/${channelId}/sendMessage`,
+        body: JSON.stringify({ content: trimmed }),
+      })
+
       const response = await fetch(`${api.defaults.baseURL.replace(/\/$/, '')}${BOT_ENDPOINT}`, {
         method: 'POST',
         headers: {
@@ -329,58 +286,17 @@ export const useChatStore = defineStore('chat', () => {
         throw new Error(message)
       }
 
-      const contentType = response.headers.get('content-type') || ''
-      if (contentType.includes('text/event-stream') || contentType.includes('text/plain')) {
-        const reader = response.body?.getReader()
-        const decoder = new TextDecoder()
-        let accumulated = ''
-
-        if (reader) {
-          while (true) {
-            const { value, done } = await reader.read()
-            if (done) break
-
-            const chunkText = decoder.decode(value, { stream: true })
-            const lines = chunkText.split(/\r?\n/).filter(Boolean)
-            lines.forEach((line) => {
-              const cleaned = line.replace(/^data:\s*/i, '')
-              if (!cleaned || cleaned === '[DONE]') return
-              accumulated += cleaned
-              appendBotChunk(cleaned)
-            })
-          }
-        }
-
-        finalizeBotMessage(placeholder.id, { content: accumulated.trim() })
-        return { ok: true, streaming: true }
-      }
-
-      const payload = await response.json().catch(async () => {
-        const text = await response.text()
-        return text
-      })
-
-      if (typeof payload === 'string') {
-        finalizeBotMessage(placeholder.id, { content: payload })
-        return { ok: true, streaming: false }
-      }
-
-      if (payload && typeof payload === 'object') {
-        const finalContent = payload.content || payload.message || payload.answer || payload.data || ''
-        finalizeBotMessage(placeholder.id, { content: finalContent })
-        return { ok: true, streaming: false }
-      }
-
-      finalizeBotMessage(placeholder.id, { content: question })
-      return { ok: true, streaming: false }
+      return { ok: true, streaming: true, pendingMessageId: pendingMessage.id }
     } catch (error) {
-      finalizeBotMessage(placeholder?.id, {
-        errorMessage: error?.message || error?.response?.data?.message || 'Bot hiện không phản hồi được, vui lòng thử lại.',
-      })
+      removePendingMessage(channelId, pendingMessage)
       return {
         ok: false,
         error,
       }
+    } finally {
+      botBusy.value = false
+      botTyping.value = false
+      botRequestAbort.value = null
     }
   }
 
@@ -425,7 +341,7 @@ export const useChatStore = defineStore('chat', () => {
     error.value = ''
     botMode.value = false
     botBusy.value = false
-    botPlaceholderId.value = null
+    botTyping.value = false
   }
 
   return {
@@ -438,6 +354,7 @@ export const useChatStore = defineStore('chat', () => {
     error,
     botMode,
     botBusy,
+    botTyping,
     fetchMessageHistory,
     connectWebSocket,
     subscribeToChannel,
@@ -448,9 +365,8 @@ export const useChatStore = defineStore('chat', () => {
     isBotCommand,
     extractBotQuestion,
     setBotMode,
+    setBotTyping,
     cancelBotRequest,
-    appendBotChunk,
-    finalizeBotMessage,
     disconnectWebSocket,
     reset,
   }

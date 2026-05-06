@@ -39,6 +39,7 @@ const {
   messages,
   botMode,
   botBusy,
+  botTyping,
   activeVoiceChannelName,
   handleSelectServer,
   handleSelectChannel,
@@ -151,6 +152,7 @@ const onMobileBack = () => {
       :loading="chatStore.isLoading || serverStore.isLoadingChannels"
       :bot-mode="botMode"
       :bot-busy="botBusy"
+      :bot-typing="botTyping"
       :is-in-voice="voiceStore.isInVoiceChannel"
       :voice-channel-name="activeVoiceChannelName"
       :muted="voiceStore.muted"

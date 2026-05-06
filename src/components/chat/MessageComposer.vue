@@ -1,5 +1,5 @@
 <script setup>
-import { Bot, ImagePlus } from 'lucide-vue-next'
+import { Bot, ImagePlus, Send } from 'lucide-vue-next'
 import { computed, ref } from 'vue'
 
 const props = defineProps({
@@ -15,12 +15,18 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  botTyping: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const emit = defineEmits(['send-message', 'send-image', 'toggle-bot-mode'])
 
 const newMessage = ref('')
 const fileInputRef = ref(null)
+
+const hasText = computed(() => Boolean(newMessage.value.trim()))
 
 const placeholderText = computed(() => {
   if (props.botMode) return `Hỏi Bot trong #${props.channelName}...`
@@ -90,6 +96,15 @@ const handleFileSelected = (event) => {
         :disabled="botBusy"
         @keydown="handleKeydown"
       />
+
+      <button
+        type="submit"
+        class="message-composer__send-button"
+        :class="{ 'message-composer__send-button--ready': hasText }"
+        title="Gửi tin nhắn"
+      >
+        <Send :size="16" stroke-width="1.9" />
+      </button>
     </form>
   </div>
 </template>
@@ -166,4 +181,36 @@ const handleFileSelected = (event) => {
   box-shadow: 0 0 0 4px rgba(124, 140, 255, 0.12);
   background: rgba(20, 26, 43, 0.98);
 }
+
+.message-composer__send-button {
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(226, 232, 240, 0.44);
+  cursor: pointer;
+  box-shadow: none;
+  transition:
+    transform var(--transition-fast),
+    color var(--transition-fast),
+    background-color var(--transition-fast),
+    opacity var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.message-composer__send-button:hover {
+  transform: translateY(-1px);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.message-composer__send-button--ready {
+  color: #e2e8f0;
+}
+
+
 </style>
