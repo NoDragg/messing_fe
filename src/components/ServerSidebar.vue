@@ -134,9 +134,12 @@ const getServerInitial = (server) => {
   display: flex;
   height: 100%;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
+  justify-content: flex-start;
   gap: 12px;
   overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
   animation: sidebar-entrance 420ms cubic-bezier(.2,.8,.2,1);
 }
 

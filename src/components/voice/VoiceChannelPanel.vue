@@ -312,7 +312,8 @@ const onUserCardClick = (user) => {
 .voice-panel__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(170px, 220px));
-  justify-content: start;
+  justify-content: center;
+  justify-items: center;
   align-items: start;
   gap: 10px;
   padding: 0;
@@ -342,6 +343,8 @@ const onUserCardClick = (user) => {
 @media (max-width: 640px) {
   .voice-panel__grid {
     grid-template-columns: 1fr;
+    justify-content: stretch;
+    justify-items: stretch;
     gap: 8px;
     padding: 0 12px 12px;
     overflow-y: auto;

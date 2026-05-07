@@ -126,12 +126,8 @@ const emit = defineEmits(['send-message', 'send-image', 'voice-mute', 'voice-dea
 
     <MessageComposer
       :channel-name="channelName"
-      :bot-mode="botMode"
-      :bot-busy="botBusy"
-      :bot-typing="botTyping"
       @send-message="emit('send-message', $event)"
       @send-image="emit('send-image', $event)"
-      @toggle-bot-mode="emit('toggle-bot-mode')"
     />
   </section>
 </template>

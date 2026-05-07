@@ -1,5 +1,5 @@
 <script setup>
-import { Bot, ImagePlus, Send } from 'lucide-vue-next'
+import { ImagePlus, Send } from 'lucide-vue-next'
 import { computed, ref } from 'vue'
 
 const props = defineProps({
@@ -7,31 +7,16 @@ const props = defineProps({
     type: String,
     default: 'general',
   },
-  botMode: {
-    type: Boolean,
-    default: false,
-  },
-  botBusy: {
-    type: Boolean,
-    default: false,
-  },
-  botTyping: {
-    type: Boolean,
-    default: false,
-  },
 })
 
-const emit = defineEmits(['send-message', 'send-image', 'toggle-bot-mode'])
+const emit = defineEmits(['send-message', 'send-image'])
 
 const newMessage = ref('')
 const fileInputRef = ref(null)
 
 const hasText = computed(() => Boolean(newMessage.value.trim()))
 
-const placeholderText = computed(() => {
-  if (props.botMode) return `Hỏi Bot trong #${props.channelName}...`
-  return `Nhắn tin vào #${props.channelName}... `
-})
+const placeholderText = computed(() => `Nhắn tin vào #${props.channelName}...`)
 
 const handleSubmit = () => {
   if (!newMessage.value.trim()) return
@@ -64,16 +49,6 @@ const handleFileSelected = (event) => {
       <button
         type="button"
         class="message-composer__icon-button"
-        :class="{ 'message-composer__icon-button--active': botMode }"
-        title="Chế độ Bot"
-        @click="emit('toggle-bot-mode')"
-      >
-        <Bot :size="18" />
-      </button>
-
-      <button
-        type="button"
-        class="message-composer__icon-button"
         title="Gửi ảnh"
         @click="triggerSelectImage"
       >
@@ -93,7 +68,6 @@ const handleFileSelected = (event) => {
         type="text"
         class="message-composer__input"
         :placeholder="placeholderText"
-        :disabled="botBusy"
         @keydown="handleKeydown"
       />
 
@@ -145,11 +119,6 @@ const handleFileSelected = (event) => {
   color: #ffffff;
   background: rgba(124, 140, 255, 0.12);
   transform: translateY(-1px);
-}
-
-.message-composer__icon-button--active {
-  color: #a5b4fc;
-  background: rgba(124, 140, 255, 0.16);
 }
 
 .message-composer__file-input {
